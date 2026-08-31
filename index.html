@@ -1,0 +1,2376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>班级生物档案 4.0</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================================
+                   iPad OS 风格
+                   基于原 Liquid Glass 美学改造
+                   ============================================================ */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+            color: #fff;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #1a1a2e;
+            overflow: hidden;
+            position: relative;
+            touch-action: none;
+            user-select: none;
+        }
+
+        /* 台前调度桌面背景 —— 多层级渐变 */
+        .desktop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background:
+                radial-gradient(circle at 15% 25%, rgba(0, 122, 255, 0.35), transparent 45%),
+                radial-gradient(circle at 85% 15%, rgba(90, 200, 255, 0.25), transparent 40%),
+                radial-gradient(circle at 50% 85%, rgba(0, 100, 200, 0.3), transparent 50%),
+                linear-gradient(160deg, #0f1b2d 0%, #1a2a4a 50%, #0d1a2e 100%);
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .desktop::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(#04a2f4, #007de7);
+            clip-path: circle(30% at left 70%);
+            opacity: 0.5;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .desktop::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(#006400, #006400);
+            clip-path: circle(20% at right 10%);
+            opacity: 0.35;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* 数字雨画布 */
+        #matrixCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.18;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* 顶部状态栏 (仿 iPad) */
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            z-index: 10000;
+            pointer-events: none;
+            letter-spacing: 0.5px;
+        }
+        .status-bar .right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-bar .right .icon {
+            font-size: 13px;
+            opacity: 0.85;
+        }
+
+        /* ============================================================
+                   桌面图标区
+                   ============================================================ */
+        .desktop-icons {
+            position: absolute;
+            top: 56px;
+            bottom: 120px;
+            left: 0;
+            right: 0;
+            padding: 4px 18px 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 76px);
+            justify-content: center;
+            gap: 20px 14px;
+            z-index: 10;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+            scrollbar-width: none;
+        }
+        .desktop-icons::-webkit-scrollbar { display: none; }
+
+        @media (min-width: 600px) {
+            .desktop-icons {
+                grid-template-columns: repeat(6, 88px);
+                gap: 24px 20px;
+                padding: 8px 28px 28px;
+            }
+        }
+        @media (min-width: 1024px) {
+            .desktop-icons {
+                grid-template-columns: repeat(8, 92px);
+                gap: 28px 24px;
+                padding: 12px 40px 32px;
+                max-width: 900px;
+                margin: 0 auto;
+            }
+        }
+
+        @media (min-width: 600px) {
+            .desktop-icon .icon-img  { width: 64px; height: 64px; font-size: 32px; border-radius: 17px; }
+            .desktop-icon .icon-label { font-size: 12px; }
+        }
+        @media (min-width: 1024px) {
+            .desktop-icon .icon-img  { width: 68px; height: 68px; font-size: 34px; }
+        }
+
+        .desktop-icon {
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
+        }
+
+        .desktop-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .desktop-icon:active {
+            transform: scale(0.94);
+        }
+
+        .desktop-icon .icon-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+
+        .desktop-icon .icon-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.92);
+            text-align: center;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+            line-height: 1.25;
+            max-width: 84px;
+            word-break: break-all;
+        }
+
+        /* ============================================================
+                   窗口系统
+                   ============================================================ */
+        .sm-window {
+            position: absolute;
+            background: rgba(30, 40, 65, 0.55);
+            backdrop-filter: blur(36px) saturate(160%);
+            -webkit-backdrop-filter: blur(36px) saturate(160%);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55),
+                inset 0 1px 0 rgba(255, 255, 255, 0.18);
+            min-width: 280px;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            will-change: transform, left, top;
+            transition: box-shadow 0.2s, opacity 0.2s;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .sm-window.active {
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.65),
+                0 0 0 1.5px rgba(90, 180, 255, 0.45) inset,
+                inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            z-index: 100 !important;
+        }
+
+        .sm-window.fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0 !important;
+            z-index: 9999 !important;
+            box-shadow: none !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        .sm-window.fullscreen .sm-titlebar {
+            border-radius: 0 !important;
+        }
+
+        .sm-window.fullscreen .sm-content {
+            border-radius: 0 !important;
+        }
+
+        /* 标题栏 */
+        .sm-titlebar {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 10px;
+            cursor: grab;
+            user-select: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px 16px 0 0;
+            background: rgba(0, 0, 0, 0.35);
+            flex-shrink: 0;
+            touch-action: none;
+            position: relative;
+            z-index: 5;
+        }
+
+        .sm-titlebar:active {
+            cursor: grabbing;
+        }
+
+        /* 交通灯按钮 */
+        .sm-traffic {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .sm-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.15s, filter 0.15s;
+            position: relative;
+            outline: none;
+            touch-action: none;
+            flex-shrink: 0;
+        }
+
+        .sm-dot:hover {
+            transform: scale(1.18);
+            filter: brightness(1.15);
+        }
+
+        .sm-dot:active {
+            transform: scale(0.88);
+        }
+
+        .sm-dot.close {
+            background: #ff5f57;
+        }
+        .sm-dot.minimize {
+            background: #ffbd2e;
+        }
+        .sm-dot.maximize {
+            background: #28c840;
+        }
+
+        .sm-title-text {
+            flex: 1;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 0.5px;
+            pointer-events: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 10px;
+        }
+
+        /* 窗口内容区 */
+        .sm-content {
+            flex: 1;
+            padding: 18px;
+            overflow-y: auto;
+            border-radius: 0 0 16px 16px;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 15px;
+            line-height: 1.7;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sm-content .avatar {
+            display: block;
+            width: 100%;
+            max-height: 260px;
+            object-fit: contain;
+            border-radius: 12px;
+            margin: 0 auto 16px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .sm-content video {
+            width: 100%;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 14px;
+        }
+
+        .sm-content .desc {
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .sm-content .highlight {
+            color: #fff;
+            font-weight: 600;
+            text-shadow: 0 0 16px rgba(255, 255, 255, 0.12);
+        }
+
+        /* 窗口动画 */
+        @keyframes smWindowIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.82) translateY(28px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .sm-window.open {
+            animation: smWindowIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
+        /* ============================================================
+                   Dock (底部程序坞)
+                   ============================================================ */
+        .sm-dock {
+            position: fixed;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(34px) saturate(180%);
+            -webkit-backdrop-filter: blur(34px) saturate(180%);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 14px 50px rgba(0, 0, 0, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            z-index: 9999;
+            max-width: calc(100vw - 40px);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+        }
+
+        .sm-dock-item {
+            width: 46px;
+            height: 46px;
+            border-radius: 13px;
+            background: rgba(255, 255, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 22px;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            flex-shrink: 0;
+            position: relative;
+            touch-action: none;
+        }
+
+        .sm-dock-item:hover {
+            transform: scale(1.18) translateY(-6px);
+            background: rgba(255, 255, 255, 0.28);
+        }
+
+        .sm-dock-item:active {
+            transform: scale(0.92);
+        }
+
+        .sm-dock-item.minimized::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .sm-dock-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 14px;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .sm-dock-divider {
+            width: 1px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .dock-label {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            letter-spacing: 1px;
+            padding: 0 6px;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        /* ============================================================
+                   最小化管理 - 左下角 ">" 按钮 + 横条
+                   ============================================================ */
+        .minimized-manager {
+            position: fixed;
+            left: 18px;
+            bottom: 90px;
+            z-index: 9998;
+            display: none;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+            pointer-events: none;
+        }
+
+        .minimized-manager.has-items {
+            display: flex;
+        }
+
+        .minimized-bar {
+            display: none;
+            flex-direction: row;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px 6px 14px;
+            background: rgba(20, 30, 50, 0.75);
+            backdrop-filter: blur(28px) saturate(160%);
+            -webkit-backdrop-filter: blur(28px) saturate(160%);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            max-width: calc(100vw - 90px);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            pointer-events: auto;
+            animation: barSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: bottom left;
+        }
+
+        .minimized-bar.open {
+            display: flex;
+        }
+
+        @keyframes barSlideUp {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) translateY(12px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .minimized-bar .bar-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.35);
+            letter-spacing: 1px;
+            padding-right: 6px;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .minimized-bar .min-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 4px 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: auto;
+            flex-shrink: 0;
+            touch-action: none;
+            min-width: 44px;
+        }
+
+        .minimized-bar .min-item:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .minimized-bar .min-item:active {
+            transform: scale(0.92);
+        }
+
+        .minimized-bar .min-item .min-icon {
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .minimized-bar .min-item .min-label {
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.6);
+            max-width: 40px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .minimized-toggle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(20, 30, 50, 0.7);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: auto;
+            touch-action: none;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .minimized-toggle:hover {
+            transform: scale(1.1);
+            background: rgba(30, 50, 80, 0.8);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+            box-shadow: 0 8px 40px rgba(100, 100, 255, 0.15);
+        }
+
+        .minimized-toggle:active {
+            transform: scale(0.90);
+        }
+
+        .minimized-toggle .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: rgba(255, 80, 80, 0.9);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            box-shadow: 0 2px 12px rgba(255, 80, 80, 0.3);
+        }
+
+        .minimized-toggle .arrow {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-block;
+        }
+
+        .minimized-toggle.open .arrow {
+            transform: rotate(90deg);
+        }
+
+        /* ============================================================
+                   字母爆炸特效 (保留)
+                   ============================================================ */
+        .letter {
+            position: fixed;
+            font-family: "Poppins", sans-serif;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.85);
+            pointer-events: none;
+            z-index: 999;
+            font-size: 18px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+            animation: letterExplode 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        }
+
+        @keyframes letterExplode {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(0.5) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(1.2) rotate(var(--rot));
+            }
+        }
+
+        /* 滚动条美化 */
+        .minimized-bar::-webkit-scrollbar,
+        .sm-dock::-webkit-scrollbar,
+        .sm-content::-webkit-scrollbar {
+            height: 3px;
+            width: 3px;
+            background: transparent;
+        }
+        .minimized-bar::-webkit-scrollbar-thumb,
+        .sm-dock::-webkit-scrollbar-thumb,
+        .sm-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+        .minimized-bar::-webkit-scrollbar-track,
+        .sm-dock::-webkit-scrollbar-track,
+        .sm-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* ============================================================
+                   壁纸层 + 更换壁纸功能
+                   ============================================================ */
+        .wallpaper-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: transparent;
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+        .wallpaper-layer.show { opacity: 1; }
+
+        .wallpaper-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 110px);
+            gap: 14px;
+            padding: 4px 2px 8px;
+        }
+        .wallpaper-thumb {
+            width: 110px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+        }
+        .wallpaper-thumb .thumb-img {
+            width: 110px;
+            height: 70px;
+            border-radius: 12px;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid rgba(255,255,255,0.15);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+            transition: transform 0.18s, border-color 0.18s;
+        }
+        .wallpaper-thumb:hover .thumb-img { transform: scale(1.06); border-color: rgba(255,255,255,0.5); }
+        .wallpaper-thumb.active .thumb-img { border-color: #5ab4ff; box-shadow: 0 0 0 2px rgba(90,180,255,0.45); }
+        .wallpaper-thumb .thumb-label { font-size: 11px; color: rgba(255,255,255,0.85); text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+        .wallpaper-actions { display: flex; gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+        .wallpaper-actions .btn {
+            padding: 8px 14px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.12); color: #fff;
+            font-size: 13px; cursor: pointer; transition: background 0.18s;
+        }
+        .wallpaper-actions .btn:hover { background: rgba(255,255,255,0.24); }
+        .wallpaper-actions input[type=file] { display: none; }
+        .wallpaper-hint { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; line-height: 1.5; }
+
+        /* ============================================================
+           ★ Apple Music 播放器
+           ============================================================ */
+        .music-player {
+            display: flex; flex-direction: column; gap: 14px;
+            padding: 4px 2px 8px;
+        }
+        .music-cover {
+            width: 100%; height: 200px; border-radius: 16px;
+            background: linear-gradient(135deg,#ff6a88,#ff99ac,#fcb69f);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 64px; box-shadow: 0 12px 34px rgba(0,0,0,0.4);
+            background-size: cover; background-position: center;
+        }
+        .music-info { text-align: center; }
+        .music-info .music-title  { font-size: 17px; font-weight: 700; color:#fff; }
+        .music-info .music-artist { font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 3px; }
+        .music-progress {
+            width: 100%; height: 5px; border-radius: 3px;
+            background: rgba(255,255,255,0.18); cursor: pointer; position: relative;
+        }
+        .music-progress .bar {
+            height: 100%; width: 0%; border-radius: 3px;
+            background: linear-gradient(90deg,#ff6a88,#ff99ac);
+            transition: width 0.1s linear;
+        }
+        .music-times { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.5); }
+        .music-seek {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 18px; margin: 4px 0 2px;
+            background: transparent; outline: none; cursor: pointer;
+        }
+        .music-seek::-webkit-slider-runnable-track {
+            height: 5px; border-radius: 3px;
+            background: rgba(255,255,255,0.18);
+        }
+        .music-seek::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #fff; margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .music-seek::-moz-range-track {
+            height: 5px; border-radius: 3px;
+            background: rgba(255,255,255,0.18);
+        }
+        .music-seek::-moz-range-thumb {
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #fff; border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .music-controls { display: flex; align-items: center; justify-content: center; gap: 20px; }
+        .music-controls .mc-btn {
+            width: 46px; height: 46px; border-radius: 50%;
+            background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.18);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; cursor: pointer; color:#fff; transition: background 0.18s, transform 0.15s;
+        }
+        .music-controls .mc-btn:hover { background: rgba(255,255,255,0.26); }
+        .music-controls .mc-btn:active { transform: scale(0.9); }
+        .music-controls .mc-play {
+            width: 62px; height: 62px; font-size: 28px;
+            background: linear-gradient(135deg,#ff6a88,#ff99ac);
+            border: none; box-shadow: 0 8px 24px rgba(90,100,255,0.4);
+        }
+        .music-playlist { max-height: 210px; overflow-y: auto; margin-top: 4px; }
+        .music-playlist .pl-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 9px 10px; border-radius: 11px; cursor: pointer;
+            border: 1px solid transparent; transition: background 0.15s;
+        }
+        .music-playlist .pl-item:hover { background: rgba(255,255,255,0.1); }
+        .music-playlist .pl-item.playing {
+            background: rgba(255,120,150,0.2); border-color: rgba(255,150,175,0.4);
+        }
+        .music-playlist .pl-cover {
+            width: 40px; height: 40px; border-radius: 9px; flex-shrink: 0;
+            background: linear-gradient(135deg,#ff6a88,#ff99ac);
+            background-size: cover; background-position: center;
+            display: flex; align-items: center; justify-content: center; font-size: 20px;
+        }
+        .music-playlist .pl-meta { flex: 1; min-width: 0; }
+        .music-playlist .pl-title {
+            font-size: 14px; color:#fff; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .music-playlist .pl-artist { font-size: 11px; color: rgba(255,255,255,0.55); }
+        .music-playlist .pl-play-icon { font-size: 16px; color: rgba(255,255,255,0.6); }
+        .music-playlist .pl-item.playing .pl-play-icon { color: #ff8fa3; }
+        .music-hint { font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+        /* ============================================================
+                   裂屏彩蛋 (Screen Crack Easter Egg)
+                   ============================================================ */
+        #crackCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 50000;
+            pointer-events: none;
+        }
+        #shatterContainer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 50001;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .shatter-piece {
+            position: absolute;
+            will-change: transform, opacity;
+        }
+        #eggVideoContainer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 60000;
+            background: #000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+        #eggVideoContainer.show {
+            display: flex;
+            opacity: 1;
+        }
+        #eggVideoContainer video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* ============================================================
+           时钟彩蛋 (Clock Easter Egg)
+           ============================================================ */
+        #clockEggVideoContainer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 60001;
+            background: #000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            pointer-events: none;
+        }
+        #clockEggVideoContainer.show {
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #clockEggVideoContainer video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #clock.frozen {
+            color: #ffd25a;
+            text-shadow: 0 0 10px rgba(255, 210, 90, 0.7);
+        }
+
+        #crackHint {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50002;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            letter-spacing: 1px;
+        }
+        #crackHint.show { opacity: 1; }
+
+        @keyframes screenShake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-3px, -2px) rotate(-0.3deg); }
+            20% { transform: translate(3px, 1px) rotate(0.3deg); }
+            30% { transform: translate(-2px, 3px) rotate(-0.2deg); }
+            40% { transform: translate(2px, -3px) rotate(0.2deg); }
+            50% { transform: translate(-1px, 2px) rotate(-0.1deg); }
+            60% { transform: translate(1px, -1px) rotate(0.1deg); }
+            70% { transform: translate(-2px, -2px) rotate(-0.1deg); }
+            80% { transform: translate(2px, 2px) rotate(0.1deg); }
+            90% { transform: translate(-1px, 1px) rotate(-0.05deg); }
+        }
+        .shake-active {
+            animation: screenShake 0.4s ease-in-out;
+        }
+
+        #whiteFlash {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #fff;
+            z-index: 55000;
+            pointer-events: none;
+            opacity: 0;
+        }
+        #whiteFlash.flash {
+            animation: whiteFlashAnim 0.6s ease-out forwards;
+        }
+        @keyframes whiteFlashAnim {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* ============================================================
+           ★ DenLiner 高铁彩蛋 —— 完整修复版
+           核心修复：音频阶段和视频阶段用【同一个 video 元素】
+           音频时画面隐藏(opacity:0)，白屏后只露画面(opacity:1)
+           视频一直在播，零重新加载、零 currentTime 重置
+           ============================================================ */
+        #denliner-layer {
+            position: fixed;
+            left: 0; right: 0; bottom: 14px;
+            height: 120px;
+            pointer-events: none;
+            z-index: 50000;
+            display: none;
+            justify-content: center;
+            align-items: flex-end;
+        }
+        #denliner-layer.active { display: flex; }
+
+        .den-rail {
+            position: absolute;
+            left: 0; right: 0; bottom: 18px; height: 36px;
+            background:
+                linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0.55) 100%),
+                repeating-linear-gradient(90deg, #2b2b2b 0 14px, #b8b8b8 14px 18px, #2b2b2b 18px 90px);
+            border-top: 3px solid #d6d6d6;
+            border-bottom: 3px solid #888;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+            transform: perspective(420px) rotateX(28deg);
+            transform-origin: bottom;
+        }
+        .den-rail::before, .den-rail::after {
+            content: ""; position: absolute; top: 8px; width: 3px; height: 20px;
+            background: #e8e8e8; box-shadow: 0 0 6px rgba(255,255,255,0.25);
+        }
+        .den-rail::before { left: 8%; }
+        .den-rail::after  { right: 8%; }
+
+        .den-sleepers {
+            position: absolute;
+            left: 0; right: 0; bottom: 8px; height: 28px;
+            background: repeating-linear-gradient(90deg, rgba(0,0,0,0) 0 22px, rgba(0,0,0,0.35) 22px 44px);
+            transform: perspective(420px) rotateX(28deg);
+            transform-origin: bottom;
+            opacity: 0.75;
+        }
+
+        .den-train {
+            position: relative;
+            width: 300px; height: 56px;
+            border-radius: 60% 18% 14% 60%;
+            background: linear-gradient(180deg, #f4f5f7 0%, #cfd2d8 55%, #9ea2aa 100%);
+            box-shadow: inset 0 4px 8px rgba(255,255,255,0.7), inset 0 -8px 14px rgba(0,0,0,0.25), 0 12px 24px rgba(0,0,0,0.45);
+            z-index: 2;
+            cursor: pointer;
+            pointer-events: auto;
+            transform: translateX(-120vw);
+            transition: transform .9s cubic-bezier(.6,.05,.2,1), width .8s, height .8s, bottom .8s;
+            animation: denTrainIdle 1.6s ease-in-out infinite alternate;
+        }
+        #denliner-layer.show-train .den-train { transform: translateX(0); }
+        #denliner-layer.big-train .den-train {
+            width: 82vw; height: 140px; bottom: 12vh;
+            animation: none; border-radius: 65% 18% 14% 60%;
+        }
+        @keyframes denTrainIdle {
+            from { transform: translateX(0) translateY(0); }
+            to   { transform: translateX(6px) translateY(-1px); }
+        }
+        .den-train::before {
+            content: ""; position: absolute; left: -2px; top: 6px;
+            width: 78px; height: 46px; border-radius: 70% 25% 25% 70%;
+            background: linear-gradient(180deg, #ff3b3b 0%, #b01010 100%);
+            box-shadow: inset 0 3px 6px rgba(255,255,255,0.35);
+        }
+        .den-train::after {
+            content: ""; position: absolute; left: 82px; top: 16px; right: 18px; height: 14px;
+            border-radius: 8px;
+            background: repeating-linear-gradient(90deg, rgba(20,30,45,0.78) 0 26px, rgba(255,255,255,0.25) 26px 30px, rgba(20,30,45,0.78) 30px 56px);
+        }
+
+        /* 彩蛋激活：隐藏页面元素 */
+        body.den-egg-active .desktop-icons,
+        body.den-egg-active .sm-window,
+        body.den-egg-active .sm-dock,
+        body.den-egg-active .minimized-manager,
+        body.den-egg-active .minimized-toggle,
+        body.den-egg-active .minimized-bar,
+        body.den-egg-active .status-bar {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transition: opacity .5s ease;
+        }
+
+        /* 旁白 */
+        #den-narration {
+            position: fixed; inset: 0; z-index: 60002;
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column; gap: 18px;
+            text-align: center; pointer-events: none;
+            color: #fff; font-size: clamp(22px, 3.2vw, 38px);
+            letter-spacing: 3px; text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+        #den-narration.show { display: flex; }
+        #den-narration span {
+            opacity: 0; transition: opacity .35s ease;
+        }
+        #den-narration span.visible { opacity: 1; }
+
+        /* 白屏 */
+        #den-white-flash {
+            position: fixed; inset: 0; z-index: 60003;
+            background: white; opacity: 0; pointer-events: none; transition: opacity .5s ease;
+        }
+        #den-white-flash.flash { opacity: 1; }
+
+        /* ★★★ 视频放置处 ★★★
+           一个 video 元素，同时负责"只播声音"和"显示画面"
+           音频阶段：opacity:0（画面隐藏，只听声音）
+           白屏后：  opacity:1（画面直接露出来，视频一直在播，无缝衔接）
+           >>> 视频文件改这里一个地方即可 <<< */
+        #den-video-element {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 60004;
+            opacity: 0;              /* 音频阶段：画面隐藏 */
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+        #den-video-element.show {
+            opacity: 1;              /* 白屏后：画面直接显示，视频不重置、不重新加载 */
+            pointer-events: auto;
+        }
+
+        /* 控制台提示（调试用，可删） */
+        #den-console {
+            position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+            z-index: 99999; font-size: 10px; color: rgba(255,255,255,0.3);
+            pointer-events: none; font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop" id="desktop">
+        <canvas id="matrixCanvas"></canvas>
+
+        <div class="wallpaper-layer" id="wallpaperLayer"></div>
+
+        <!-- 顶部状态栏 -->
+        <div class="status-bar">
+            <span>班级生物档案 4.0</span>
+            <div class="right">
+                <span class="icon">📶</span>
+                <span class="icon">🔋</span>
+                <span id="clock">--:--</span>
+            </div>
+        </div>
+
+        <div class="desktop-icons" id="desktopIcons"></div>
+
+        <div class="sm-dock" id="dock"></div>
+
+        <!-- 全局 audio -->
+        <audio id="globalAudio" preload="metadata" playsinline></audio>
+
+        <!-- 最小化栏 -->
+        <div class="minimized-manager" id="minimizedManager">
+            <div class="minimized-bar" id="minimizedBar">
+                <span class="bar-label">📋 已最小化</span>
+            </div>
+            <div class="minimized-toggle" id="minimizedToggle">
+                <span class="arrow">▶</span>
+                <span class="badge" id="minBadge" style="display:none;">0</span>
+            </div>
+        </div>
+
+        <!-- 裂屏彩蛋元素 -->
+        <canvas id="crackCanvas"></canvas>
+        <div id="shatterContainer"></div>
+        <div id="whiteFlash"></div>
+        <div id="crackHint"></div>
+
+        <!-- 裂屏彩蛋最终视频 -->
+        <div id="eggVideoContainer">
+            <video id="eggVideo" playsinline>
+                <!-- ★★★ 在这里替换为你自己的视频文件 ★★★ -->
+                <source src="https://pan.vma.cc/pan/v/927da528e0b17be9ae46ac8394457b29?ext=mp4" type="video/mp4">
+            </video>
+        </div>
+
+        <!-- 时钟彩蛋视频 -->
+        <div id="clockEggVideoContainer">
+            <video id="clockEggVideo" playsinline>
+                <source src="https://pan.vma.cc/pan/v/57ed14d65bbd4b29536e9ed9768952bb?ext=mp4" type="video/mp4">
+            </video>
+        </div>
+
+        <!-- ★ DenLiner 高铁彩蛋层 -->
+        <div id="denliner-layer">
+            <div class="den-sleepers"></div>
+            <div class="den-rail"></div>
+            <div class="den-train" title="Den-Liner"></div>
+        </div>
+        <div id="den-narration"><span id="denLine1"></span><span id="denLine2"></span></div>
+        <div id="den-white-flash"></div>
+
+        <!-- ★★★ 视频放置处：DenLiner 彩蛋唯一视频元素 ★★★
+             >>> 只改这一个 src 就行，音频和画面是同一个视频 <<< -->
+        <video id="den-video-element" playsinline webkit-playsinline preload="auto">
+            <source src="https://pan.vma.cc/pan/v/4eb1e6a232eecba2eecf20ebdb186f7b?ext=mp4" type="video/mp4">
+        </video>
+
+        <!-- 调试信息（可删） -->
+        <div id="den-console"></div>
+    </div>
+
+    <script>
+        // ===== 爆字母 =====
+        var letterSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        function boomLetters(targetBtn) {
+            if (targetBtn._booming) return;
+            targetBtn._booming = true;
+            var rect = targetBtn.getBoundingClientRect();
+            var cx = rect.left + rect.width / 2;
+            var cy = rect.top + rect.height / 2;
+            var count = 10;
+            var fragment = document.createDocumentFragment();
+            for (var i = 0; i < count; i++) {
+                var el = document.createElement('div');
+                el.className = 'letter';
+                el.textContent = letterSet[Math.floor(Math.random() * letterSet.length)];
+                var angle = Math.random() * 2 * Math.PI;
+                var distance = 40 + Math.random() * 80;
+                el.style.setProperty('--tx', (Math.cos(angle) * distance) + 'px');
+                el.style.setProperty('--ty', (Math.sin(angle) * distance - 20) + 'px');
+                el.style.setProperty('--rot', (Math.random() - 0.5) * 360 + 'deg');
+                el.style.left = cx + 'px';
+                el.style.top = cy + 'px';
+                el.style.fontSize = (12 + Math.random() * 12) + 'px';
+                fragment.appendChild(el);
+            }
+            document.body.appendChild(fragment);
+            setTimeout(function() {
+                var all = document.querySelectorAll('.letter');
+                for (var j = 0; j < all.length; j++) all[j].remove();
+                targetBtn._booming = false;
+            }, 750);
+        }
+
+        // ===== 时钟 + 时钟彩蛋 =====
+        var CLOCK_EGG_VIDEO_SRC  = 'https://pan.vma.cc/pan/v/57ed14d65bbd4b29536e9ed9768952bb?ext=mp4';
+        var CLOCK_EGG_FROZEN_DATE = '2018/09/02';
+
+        var clockEl       = document.getElementById('clock');
+        var clockVideoBox = document.getElementById('clockEggVideoContainer');
+        var clockVideoEl  = document.getElementById('clockEggVideo');
+        var desktopEl4Clock = document.getElementById('desktop');
+        var clockFrozen   = false;
+        var clockPlayed   = false;
+
+        function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+        function tickClock() {
+            if (clockFrozen) return;
+            var d = new Date();
+            clockEl.textContent =
+                d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()) +
+                ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+        }
+        tickClock();
+        setInterval(tickClock, 10000);
+
+        function triggerClockEgg() {
+            if (clockPlayed) return;
+            if (!clockFrozen) {
+                clockFrozen = true;
+                clockEl.textContent = CLOCK_EGG_FROZEN_DATE;
+                clockEl.classList.add('frozen');
+            } else {
+                clockPlayed = true;
+                clockVideoEl.src = CLOCK_EGG_VIDEO_SRC;
+                clockVideoBox.classList.add('show');
+                var p = clockVideoEl.play();
+                if (p && typeof p.then === 'function') {
+                    p.then(function() {}, function() {
+                        clockVideoEl.muted = true;
+                        clockVideoEl.play();
+                    });
+                }
+                clockVideoEl.onended = function() {
+                    clockVideoBox.classList.remove('show');
+                };
+            }
+        }
+
+        function onDesktopBlank(e) {
+            var t = e.target;
+            // 滑动 Dock 期间不算点击
+            if (window.__isSliding || (window.__slideMoved >= 40)) return;
+            if (t && typeof t.closest === 'function' &&
+                t.closest('.sm-window, .desktop-icon, .desktop-icons, .sm-dock, .status-bar, .minimized-manager, .minimized-toggle, .minimized-bar')) {
+                return;
+            }
+            while (t && t !== document.body) {
+                if (t.id === 'desktop') { triggerClockEgg(); return; }
+                t = t.parentNode;
+            }
+        }
+        desktopEl4Clock.addEventListener('click', onDesktopBlank);
+        desktopEl4Clock.addEventListener('touchend', function(e) {
+            if (window.__isSliding || (window.__slideMoved >= 40)) return;
+            var t = e.target;
+            if (t && typeof t.closest === 'function' &&
+                t.closest('.sm-window, .desktop-icon, .desktop-icons, .sm-dock, .status-bar, .minimized-manager, .minimized-toggle, .minimized-bar')) {
+                return;
+            }
+            while (t && t !== document.body) {
+                if (t.id === 'desktop') { e.preventDefault(); triggerClockEgg(); return; }
+                t = t.parentNode;
+            }
+        });
+
+        // ================================================================
+        // 核心：iPad OS 系统
+        // ================================================================
+        var StageManager = (function() {
+            var zIndexCounter = 100;
+            var windows = {};
+            var dockItems = {};
+            var desktop = document.getElementById('desktop');
+            var dock = document.getElementById('dock');
+            var posIndex = 0;
+
+            var minimizedIds = [];
+            var minimizedManager = document.getElementById('minimizedManager');
+            var minimizedBar = document.getElementById('minimizedBar');
+            var minimizedToggle = document.getElementById('minimizedToggle');
+            var minBadge = document.getElementById('minBadge');
+            var isBarOpen = false;
+
+            function updateMinimizedUI() {
+                var count = minimizedIds.length;
+                if (count === 0) {
+                    minimizedManager.classList.remove('has-items');
+                    minimizedBar.classList.remove('open');
+                    isBarOpen = false;
+                    minimizedToggle.classList.remove('open');
+                    minBadge.style.display = 'none';
+                    return;
+                }
+                minimizedManager.classList.add('has-items');
+                minBadge.textContent = count;
+                minBadge.style.display = 'flex';
+                var barHTML = '<span class="bar-label">📋 已最小化</span>';
+                minimizedIds.forEach(function(id) {
+                    var data = windows[id];
+                    if (!data) return;
+                    var label = data.title.replace('的档案', '').replace('男团出道秘图', '男团秘图');
+                    if (label.length > 5) label = label.slice(0, 4) + '…';
+                    barHTML +=
+                        '<div class="min-item" data-id="' + id + '">' +
+                        '<span class="min-icon">' + (data.icon || '📄') + '</span>' +
+                        '<span class="min-label">' + label + '</span>' +
+                        '</div>';
+                });
+                minimizedBar.innerHTML = barHTML;
+                minimizedBar.querySelectorAll('.min-item').forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var id = this.dataset.id;
+                        if (windows[id]) restoreWindow(id);
+                    });
+                });
+                if (isBarOpen) {
+                    minimizedBar.classList.add('open');
+                    minimizedToggle.classList.add('open');
+                } else {
+                    minimizedBar.classList.remove('open');
+                    minimizedToggle.classList.remove('open');
+                }
+            }
+
+            function toggleBar(e) {
+                if (e) e.stopPropagation();
+                if (minimizedIds.length === 0) return;
+                isBarOpen = !isBarOpen;
+                if (isBarOpen) {
+                    minimizedBar.classList.add('open');
+                    minimizedToggle.classList.add('open');
+                } else {
+                    minimizedBar.classList.remove('open');
+                    minimizedToggle.classList.remove('open');
+                }
+            }
+
+            minimizedToggle.addEventListener('click', toggleBar);
+
+            function createWindow(id, title, icon, contentHTML, w, h) {
+                if (windows[id]) {
+                    restoreWindow(id);
+                    return windows[id].el;
+                }
+                var maxW = Math.min(window.innerWidth - 40, 500);
+                var maxH = Math.min(window.innerHeight - 100, 600);
+                var minW = Math.min(280, maxW);
+                var minH = Math.min(160, maxH);
+                w = Math.max(minW, Math.min(w || 380, maxW));
+                h = Math.max(minH, Math.min(h || 440, maxH));
+
+                var offset = (posIndex % 8) * 28;
+                var x = Math.min(40 + offset, window.innerWidth - w - 20);
+                var y = Math.min(50 + offset, window.innerHeight - h - 80);
+                if (x < 10) x = 10;
+                if (y < 40) y = 40;
+                posIndex++;
+
+                var win = document.createElement('div');
+                win.className = 'sm-window open';
+                win.id = 'sm-win-' + id;
+                win.style.left = x + 'px';
+                win.style.top = y + 'px';
+                win.style.width = w + 'px';
+                win.style.height = h + 'px';
+                win.style.zIndex = zIndexCounter++;
+                win.innerHTML = '<div class="sm-titlebar"><div class="sm-traffic"><button class="sm-dot close" data-action="close" title="关闭"></button><button class="sm-dot minimize" data-action="minimize" title="最小化"></button><button class="sm-dot maximize" data-action="maximize" title="全屏"></button></div><span class="sm-title-text">' + title + '</span></div><div class="sm-content">' + contentHTML + '</div>';
+
+                desktop.appendChild(win);
+                var savedState = { x: x, y: y, w: w, h: h, fullscreen: false };
+                windows[id] = { el: win, minimized: false, title: title, icon: icon, x: x, y: y, w: w, h: h, fullscreen: false, savedState: savedState };
+
+                win.addEventListener('pointerdown', function(e) {
+                    if (e.target.closest('.sm-dot')) return;
+                    if (e.target.closest('.sm-titlebar')) return;
+                    activateWindow(id);
+                });
+
+                makeDraggable(win.querySelector('.sm-titlebar'), win, id);
+
+                win.querySelector('[data-action="close"]').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeWindow(id);
+                });
+                win.querySelector('[data-action="minimize"]').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    minimizeWindow(id);
+                });
+                win.querySelector('[data-action="maximize"]').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleFullscreen(id);
+                });
+
+                createDockItem(id);
+                activateWindow(id);
+                updateMinimizedUI();
+                return win;
+            }
+
+            function activateWindow(id) {
+                if (!windows[id]) return;
+                Object.keys(windows).forEach(function(k) {
+                    if (windows[k]) windows[k].el.classList.remove('active');
+                });
+                windows[id].el.classList.add('active');
+                windows[id].el.style.zIndex = zIndexCounter++;
+                refreshDockActive();
+            }
+
+            function closeWindow(id) {
+                if (!windows[id]) return;
+                var idx = minimizedIds.indexOf(id);
+                if (idx !== -1) minimizedIds.splice(idx, 1);
+                windows[id].el.remove();
+                delete windows[id];
+                removeDockItem(id);
+                updateMinimizedUI();
+                if (minimizedIds.length === 0) {
+                    isBarOpen = false;
+                    minimizedBar.classList.remove('open');
+                    minimizedToggle.classList.remove('open');
+                }
+            }
+
+            function minimizeWindow(id) {
+                if (!windows[id] || windows[id].minimized) return;
+                if (windows[id].fullscreen) exitFullscreen(id);
+                windows[id].el.style.display = 'none';
+                windows[id].minimized = true;
+                if (minimizedIds.indexOf(id) === -1) minimizedIds.push(id);
+                isBarOpen = true;
+                updateMinimizedUI();
+                activateNextWindow();
+            }
+
+            function restoreWindow(id) {
+                if (!windows[id] || !windows[id].minimized) return;
+                windows[id].el.style.display = 'flex';
+                windows[id].minimized = false;
+                var idx = minimizedIds.indexOf(id);
+                if (idx !== -1) minimizedIds.splice(idx, 1);
+                if (windows[id].fullscreen) windows[id].el.classList.add('fullscreen');
+                updateMinimizedUI();
+                activateWindow(id);
+                refreshDockActive();
+                if (minimizedIds.length === 0) {
+                    isBarOpen = false;
+                    minimizedBar.classList.remove('open');
+                    minimizedToggle.classList.remove('open');
+                }
+            }
+
+            function toggleFullscreen(id) {
+                if (!windows[id]) return;
+                if (windows[id].fullscreen) exitFullscreen(id);
+                else enterFullscreen(id);
+            }
+
+            function enterFullscreen(id) {
+                var data = windows[id];
+                if (!data || data.fullscreen) return;
+                if (data.minimized) {
+                    restoreWindow(id);
+                    var d2 = windows[id];
+                    if (!d2) return;
+                    requestAnimationFrame(function() { enterFullscreen(id); });
+                    return;
+                }
+                data.savedState = { x: data.x, y: data.y, w: data.w, h: data.h, fullscreen: false };
+                data.el.classList.add('fullscreen');
+                data.fullscreen = true;
+                data.el.style.zIndex = 9999;
+                activateWindow(id);
+                data.x = 0; data.y = 0;
+                data.w = window.innerWidth; data.h = window.innerHeight;
+            }
+
+            function exitFullscreen(id) {
+                var data = windows[id];
+                if (!data || !data.fullscreen) return;
+                data.el.classList.remove('fullscreen');
+                data.fullscreen = false;
+                var saved = data.savedState;
+                if (saved) {
+                    data.x = saved.x; data.y = saved.y; data.w = saved.w; data.h = saved.h;
+                    data.el.style.left = saved.x + 'px';
+                    data.el.style.top = saved.y + 'px';
+                    data.el.style.width = saved.w + 'px';
+                    data.el.style.height = saved.h + 'px';
+                }
+                data.el.style.zIndex = zIndexCounter++;
+                activateWindow(id);
+            }
+
+            function activateNextWindow() {
+                var keys = Object.keys(windows);
+                for (var i = keys.length - 1; i >= 0; i--) {
+                    var k = keys[i];
+                    if (!windows[k].minimized) { activateWindow(k); return; }
+                }
+            }
+
+            function makeDraggable(handle, target, id) {
+                var isDragging = false, startX, startY, origX, origY;
+                function onStart(e) {
+                    if (e.target.closest('.sm-dot')) return;
+                    var data = windows[id];
+                    if (!data || data.fullscreen || data.minimized) return;
+                    try { e.preventDefault(); } catch (_) {}
+                    isDragging = true;
+                    startX = e.clientX; startY = e.clientY;
+                    origX = parseInt(target.style.left) || 0;
+                    origY = parseInt(target.style.top) || 0;
+                    handle.style.cursor = 'grabbing';
+                    try { target.setPointerCapture(e.pointerId); } catch (_) {}
+                    activateWindow(id);
+                }
+                function onMove(e) {
+                    if (!isDragging) return;
+                    var dx = e.clientX - startX;
+                    var dy = e.clientY - startY;
+                    var newX = origX + dx;
+                    var newY = origY + dy;
+                    var maxX = window.innerWidth - parseInt(target.style.width) - 10;
+                    var maxY = window.innerHeight - parseInt(target.style.height) - 20;
+                    if (newX < 10) newX = 10;
+                    if (newY < 40) newY = 40;
+                    if (newX > maxX) newX = maxX;
+                    if (newY > maxY) newY = maxY;
+                    target.style.left = newX + 'px';
+                    target.style.top = newY + 'px';
+                    if (windows[id] && !windows[id].fullscreen) {
+                        windows[id].x = newX; windows[id].y = newY;
+                    }
+                }
+                function onEnd(e) {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    handle.style.cursor = '';
+                    try { target.releasePointerCapture(e.pointerId); } catch (_) {}
+                }
+                handle.addEventListener('pointerdown', onStart);
+                handle.addEventListener('pointermove', onMove);
+                handle.addEventListener('pointerup', onEnd);
+                handle.addEventListener('pointercancel', onEnd);
+            }
+
+            function createDockItem(id) {
+                var data = windows[id];
+                var item = document.createElement('div');
+                item.className = 'sm-dock-item';
+                item.innerHTML = data.icon || '📄';
+                item.title = data.title;
+                item.dataset.id = id;
+                item.addEventListener('click', function() {
+                    var d = windows[id];
+                    if (!d) return;
+                    if (d.minimized) restoreWindow(id);
+                    else if (d.el.classList.contains('active')) minimizeWindow(id);
+                    else activateWindow(id);
+                    refreshDockActive();
+                });
+                dock.appendChild(item);
+                dockItems[id] = item;
+            }
+
+            function removeDockItem(id) {
+                if (dockItems[id]) {
+                    dockItems[id].remove();
+                    delete dockItems[id];
+                }
+            }
+
+            function refreshDockActive() {
+                Object.keys(windows).forEach(function(k) {
+                    if (!dockItems[k]) return;
+                    dockItems[k].classList.remove('active', 'minimized');
+                    if (windows[k].minimized) dockItems[k].classList.add('minimized');
+                    else if (windows[k].el.classList.contains('active')) dockItems[k].classList.add('active');
+                });
+            }
+
+            window.addEventListener('resize', function() {
+                Object.keys(windows).forEach(function(k) {
+                    var data = windows[k];
+                    if (!data) return;
+                    if (data.fullscreen) {
+                        data.w = window.innerWidth; data.h = window.innerHeight;
+                        data.el.style.width = data.w + 'px';
+                        data.el.style.height = data.h + 'px';
+                    } else {
+                        var maxX = window.innerWidth - parseInt(data.el.style.width) - 10;
+                        var maxY = window.innerHeight - parseInt(data.el.style.height) - 20;
+                        var curX = parseInt(data.el.style.left) || 0;
+                        var curY = parseInt(data.el.style.top) || 0;
+                        if (curX > maxX) { curX = Math.max(10, maxX); data.el.style.left = curX + 'px'; data.x = curX; }
+                        if (curY > maxY) { curY = Math.max(40, maxY); data.el.style.top = curY + 'px'; data.y = curY; }
+                    }
+                });
+            });
+
+            return {
+                createWindow: createWindow,
+                activateWindow: activateWindow,
+                closeWindow: closeWindow,
+                minimizeWindow: minimizeWindow,
+                restoreWindow: restoreWindow,
+                toggleFullscreen: toggleFullscreen,
+                getMinimizedCount: function() { return minimizedIds.length; },
+                getWindows: function() { return windows; }
+            };
+        })();
+
+        // ===== 档案数据 =====
+        var IMG = 'https://backup.fukit.cn/autoupload/f/NgwaoXHu41F6ZKThS3O74BRhbpItrjaG1pKu4H5lA0I/';
+        var VID = 'https://img.tofaka.com/autoupload/f/NgwaoXHu41F6ZKThS3O74BRhbpItrjaG1pKu4H5lA0I/';
+
+        var archiveData = {
+            1: { title: '鸡爪哥的档案', icon: '🐔', name: '鸡爪哥',
+                media: { type: 'img', src: IMG + '20260630/minE/1280X3488/%E5%9B%BE%E7%89%87P%E5%9B%BE%EF%BC%88%E5%B0%8F%E7%94%B3%E5%AD%A9%E5%A5%B3%E4%BB%86%E8%A3%85%EF%BC%89.png' },
+                desc: '全班颜值最高的人', hobby: '玩摇杆' },
+            2: { title: '农大吊的档案', icon: '🌾', name: '农大吊',
+                media: { type: 'img', src: IMG + '20260629/npSV/780X1038/IMG_20260629_220745.JPG' },
+                desc: '鸡爪哥的忠实小迷弟', hobby: '玩摇杆' },
+            3: { title: '小归头的档案', icon: '😎', name: '小归头',
+                media: null, desc: '你们完蛋了', hobby: '说风凉话' },
+            4: { title: '谢龙辉的档案', icon: '🏸', name: '谢龙辉',
+                media: { type: 'img', src: IMG + '20260706/GBtC/652X684/IMG_20260706_202420.JPG' },
+                desc: '颜值仅次于鸡爪哥的人', hobby: '打羽毛球' },
+            5: { title: '周杰伦的档案', icon: '🎤', name: '周杰伦',
+                media: { type: 'img', src: IMG + '20260627/kEPC/754X1010/IMG_20260627_202749.JPG' },
+                desc: '周杰伦在模仿大赛中拿了第二名', hobby: '开演唱会' },
+            6: { title: '万云欣的档案', icon: '🌸', name: '万云欣',
+                media: { type: 'img', src: IMG + '20260627/k9jw/1080X1440/52379680428784159971782547564750.jpg' },
+                desc: '班级女神，老师眼中的乖乖女', hobby: '追剧' },
+            7: { title: '乌冬瓜的档案', icon: '🍈', name: '乌冬瓜',
+                media: null, desc: 'NIGGER NIGGER NIGGER', hobby: '三角洲' },
+            8: { title: '猪先生的档案', icon: '🐷', name: '猪先生',
+                media: { type: 'video', src: VID + '20260627/8crT/mmexport1781624825964.mp4' },
+                desc: '对不起 对不起 对不起 ……', hobby: '对不起' },
+            9: { title: '平成终章', icon: '⏰', name: '假面骑士 平成世代 永恒 时王与创骑 携手全体平成骑士',
+                media: { type: 'video', src: 'https://pan.vma.cc/pan/v/621e7200800ef8f6b6903b38512ae493?ext=mp4' },
+                desc: ' ', hobby: ' ' },
+            10: { title: '猪猪侠的档案', icon: '🦸', name: '猪猪侠',
+                media: { type: 'img', src: IMG + '20260701/VLKh/1706X1279/mmexport1782563403159.jpg' },
+                desc: '班主任眼中的乖乖男，但总被语文老师刁难', hobby: '？？' },
+            11: { title: '大熊猫的档案', icon: '🐼', name: '大熊猫',
+                media: { type: 'img', src: IMG + '20260627/B9gk/756X1006/IMG_20260627_203126.JPG' },
+                desc: '他都真哭了你们还搞他', hobby: '内鬼' },
+            12: { title: '大少爷的档案', icon: '👑', name: '大少爷',
+                media: { type: 'img', src: IMG + '20260627/d6I4/872X989/IMG_20260627_202835.JPG' },
+                desc: '？？', hobby: '？？' },
+            13: { title: '自慰浩的档案', icon: '💇', name: '自慰浩',
+                media: { type: 'img', src: IMG + '20260627/WwAG/586X1042/IMG_20260627_204016.JPG' },
+                desc: '陈学锦的儿子', hobby: '臭美' },
+            14: { title: '水猴子的档案', icon: '🐒', name: '水猴子',
+                media: { type: 'img', src: IMG + '20260627/Spkz/756X1008/IMG_20260627_203922.JPG' },
+                desc: '大表哥你是不是非要抢我的白菜', hobby: '马戏团演员' },
+            15: { title: '男团出道秘图', icon: '🚫', name: '禁止泄露',
+                media: { type: 'img', src: IMG + '20260704/NbKR/1440X1080/52275534689625718631783150174145.jpg' },
+                desc: '禁止泄露 禁止泄露', hobby: '禁止泄露' }
+        };
+
+        var socialApps = [
+            { icon: '📱', label: '农大吊快手', url: 'https://v.kuaishou.com/K3Eo12Lb' },
+            { icon: '📱', label: '周杰伦快手', url: 'https://v.kuaishou.com/n5lmxHYy' },
+            { icon: '📱', label: '万云欣快手', url: 'https://v.kuaishou.com/J2h222Yw' },
+            { icon: '📱', label: '乌冬瓜快手', url: 'https://v.kuaishou.com/JWQSzQca' },
+            { icon: '📱', label: '自慰浩快手', url: 'https://v.kuaishou.com/K5WWSmm1' },
+            { icon: '📘', label: '1.0 档案', url: 'https://icc.gt.tc/Class-Bio-Record-Version1' },
+            { icon: '📗', label: '2.0 档案', url: 'https://icc.gt.tc/Class-Bio-Record-Version2' }
+        ];
+
+        function buildMediaHTML(media) {
+            if (!media) return '';
+            if (media.type === 'video') {
+                if (media.src && media.src.indexOf('pan.vma.cc') !== -1) {
+                    return '<div style="text-align:center;padding:36px 12px;">' +
+                        '<p style="color:rgba(255,255,255,0.65);margin-bottom:18px;font-size:14px;">该视频需在新窗口播放</p>' +
+                        '<a href="' + media.src + '" target="_blank" rel="noopener noreferrer" ' +
+                        'style="display:inline-block;padding:13px 30px;background:rgba(0,122,255,0.75);' +
+                        'border-radius:13px;color:#fff;text-decoration:none;font-size:15px;font-weight:600;' +
+                        'border:1px solid rgba(255,255,255,0.25);box-shadow:0 6px 20px rgba(0,0,0,0.3);">' +
+                        '&#9654; 点击在新窗口播放视频 &#8599;</a></div>';
+                }
+                return '<video src="' + media.src + '" controls preload="metadata"></video>';
+            }
+            return '<img class="avatar archive-photo" src="' + media.src + '" alt=""' + ' data-archive-photo="1" onerror="this.style.display=\'none\'">';
+        }
+
+        function buildArchiveHTML(data) {
+            return buildMediaHTML(data.media) +
+                '<div class="desc"><span class="highlight">' + data.name + '</span> ' + data.desc + '<br>爱好：<span class="highlight">' +
+                data.hobby + '</span></div>';
+        }
+
+        // ===== 渲染桌面图标 =====
+        var desktopIcons = document.getElementById('desktopIcons');
+
+        function createDesktopIcon(action, data) {
+            var el = document.createElement('div');
+            el.className = 'desktop-icon';
+            el.innerHTML = '<div class="icon-img">' + data.icon + '</div>' +
+                '<div class="icon-label">' + data.title.replace('的档案', '').replace('男团出道秘图', '男团秘图') + '</div>';
+            el.addEventListener('click', function() {
+                boomLetters(this);
+                var html = buildArchiveHTML(data);
+                var winW = data.media ? 400 : 340;
+                var winH = data.media ? 480 : 260;
+                setTimeout(function() {
+                    StageManager.createWindow('archive_' + action, data.title, data.icon, html, winW, winH);
+                }, 250);
+            });
+            desktopIcons.appendChild(el);
+        }
+
+        Object.keys(archiveData).forEach(function(k) {
+            createDesktopIcon(k, archiveData[k]);
+        });
+
+        socialApps.forEach(function(app, idx) {
+            var el = document.createElement('div');
+            el.className = 'desktop-icon';
+            el.innerHTML = '<div class="icon-img">' + app.icon + '</div>' +
+                '<div class="icon-label">' + app.label + '</div>';
+            el.addEventListener('click', function() {
+                boomLetters(this);
+                window.open(app.url, '_blank');
+            });
+            desktopIcons.appendChild(el);
+        });
+
+        // ===== Apple Music 入口 =====
+        (function addMusicEntry() {
+            if (document.getElementById('desktopMusicEntry')) return;
+            var entry = document.createElement('div');
+            entry.className = 'desktop-icon';
+            entry.id = 'desktopMusicEntry';
+            entry.innerHTML = '<div class="icon-img" style="background:linear-gradient(135deg,#ff6a88,#ff99ac);">🎵</div>' +
+                '<div class="icon-label">Apple Music</div>';
+            entry.addEventListener('click', function() {
+                boomLetters(this);
+                setTimeout(function() {
+                    if (window.AppleMusic && window.AppleMusic.open) window.AppleMusic.open();
+                }, 250);
+            });
+            desktopIcons.appendChild(entry);
+        })();
+
+        // ===== 更换壁纸入口 =====
+        (function addWallpaperEntry() {
+            if (document.getElementById('desktopWallpaperEntry')) return;
+            var entry = document.createElement('div');
+            entry.className = 'desktop-icon';
+            entry.id = 'desktopWallpaperEntry';
+            entry.innerHTML = '<div class="icon-img" style="background:linear-gradient(135deg,#3a7bd5,#6fa8ff);">🖼️</div>' +
+                '<div class="icon-label">更换壁纸</div>';
+            entry.addEventListener('click', function() {
+                boomLetters(this);
+                setTimeout(function() {
+                    if (window.WallpaperModule && window.WallpaperModule.openWallpaperSelector) {
+                        window.WallpaperModule.openWallpaperSelector();
+                    }
+                }, 250);
+            });
+            desktopIcons.appendChild(entry);
+        })();
+
+        // ===== ESC 关闭窗口 =====
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var active = document.querySelector('.sm-window.active');
+                if (active) {
+                    var id = active.id.replace('sm-win-', '');
+                    StageManager.closeWindow(id);
+                }
+            }
+        });
+
+        // ===== 点击背景取消激活 =====
+        document.getElementById('desktop').addEventListener('pointerdown', function(e) {
+            if (e.target.closest('.sm-window') || e.target.closest('.desktop-icon') ||
+                e.target.closest('.sm-dock') || e.target.closest('.minimized-manager')) {
+                return;
+            }
+            Object.keys(StageManager.getWindows()).forEach(function(k) {
+                var w = StageManager.getWindows()[k];
+                if (w) w.el.classList.remove('active');
+            });
+            var dockItems = document.querySelectorAll('.sm-dock-item');
+            dockItems.forEach(function(item) { item.classList.remove('active'); });
+        });
+
+        // ================================================================
+        //   ★ 更换壁纸功能
+        // ================================================================
+        (function WallpaperModule() {
+            var PRESET_WALLPAPERS = [
+                { id: 'default', name: '默认渐变', url: '' },
+                { id: 'grease',   name: '海哥追星成功',     url: 'https://pan.vma.cc/pan/v/10b4ed58feaa7a3ed198b45f2ae53c54?ext=jpegg' },
+                { id: 'cross-z', name: '龙我惊讶',     url: 'https://pan.vma.cc/pan/v/8aab42de0f8eea67924b2b088a4c95d3?ext=jpg' },
+                { id: 'decade',    name: '帝骑说得对',     url: 'https://pan.vma.cc/pan/v/8f5b50223476f90f772085b0cfd2e558?ext=jpeg' },
+                { id: 'love draw say',   name: '爱染说',     url: 'https://pan.vma.cc/pan/v/12ed324e0e561e6d38dea128c12a2e4f?ext=jpg' },
+                { id: 'beautiful fight',   name: '美剑说得对',     url: 'https://pan.vma.cc/pan/v/214d32c162b978324590edeaa17f633e?ext=jpeg' }
+            ];
+
+            var wallpaperLayer = document.getElementById('wallpaperLayer');
+
+            function openWallpaperSelector() {
+                var html = '<div style="text-align:center;padding:20px 0 10px;">' +
+                    '<h3 style="margin-bottom:14px;color:#fff;">更换壁纸</h3>' +
+                    '<div class="wallpaper-grid">';
+                PRESET_WALLPAPERS.forEach(function(wp) {
+                    var bg = wp.url ? 'style="background-image:url(\'' + wp.url + '\')"' : '';
+                    var active = (wp.id === 'default') ? 'class="wallpaper-thumb active"' : 'class="wallpaper-thumb"';
+                    html += '<div ' + active + ' data-id="' + wp.id + '" data-url="' + (wp.url || '') + '">' +
+                        '<div class="thumb-img" ' + bg + '></div>' +
+                        '<div class="thumb-label">' + wp.name + '</div></div>';
+                });
+                html += '</div>' +
+                    '<div class="wallpaper-actions" style="justify-content:center;margin-top:16px;">' +
+                    '<label class="btn">📁 上传图片<input type="file" accept="image/*" id="wpUpload"></label>' +
+                    '<button class="btn" id="wpDefault">↩ 恢复默认</button>' +
+                    '</div>' +
+                    '<div class="wallpaper-hint">提示：壁纸文件可放在与本 HTML 同级的 wallpapers/ 目录，或直接使用网络图片链接。</div>' +
+                    '</div>';
+
+                StageManager.createWindow('wallpaper_sel', '更换壁纸', '🖼️', html, 420, 520);
+
+                var win = document.getElementById('sm-win-wallpaper_sel');
+                if (!win) return;
+                var grid = win.querySelector('.wallpaper-grid');
+                if (grid) {
+                    grid.addEventListener('click', function(e) {
+                        var thumb = e.target.closest('.wallpaper-thumb');
+                        if (!thumb) return;
+                        grid.querySelectorAll('.wallpaper-thumb').forEach(function(t) { t.classList.remove('active'); });
+                        thumb.classList.add('active');
+                        var url = thumb.dataset.url;
+                        if (url) {
+                            wallpaperLayer.style.backgroundImage = 'url("' + url + '")';
+                            wallpaperLayer.classList.add('show');
+                            try { localStorage.setItem('bio_wallpaper_url', url); } catch(e) {}
+                        } else {
+                            wallpaperLayer.style.backgroundImage = 'none';
+                            wallpaperLayer.classList.remove('show');
+                            try { localStorage.removeItem('bio_wallpaper_url'); } catch(e) {}
+                        }
+                    });
+                }
+                var up = win.querySelector('#wpUpload');
+                if (up) up.addEventListener('change', function(e) {
+                    var f = e.target.files[0];
+                    if (!f) return;
+                    var reader = new FileReader();
+                    reader.onload = function(ev) {
+                        wallpaperLayer.style.backgroundImage = 'url(\'' + ev.target.result + '\')';
+                        wallpaperLayer.classList.add('show');
+                        try { localStorage.setItem('bio_wallpaper_url', ev.target.result); } catch(e) {}
+                    };
+                    reader.readAsDataURL(f);
+                });
+                var def = win.querySelector('#wpDefault');
+                if (def) def.addEventListener('click', function() {
+                    wallpaperLayer.style.backgroundImage = 'none';
+                    wallpaperLayer.classList.remove('show');
+                    try { localStorage.removeItem('bio_wallpaper_url'); } catch(e) {}
+                    grid.querySelectorAll('.wallpaper-thumb').forEach(function(t) { t.classList.remove('active'); });
+                    var def2 = grid.querySelector('.wallpaper-thumb');
+                    if (def2) def2.classList.add('active');
+                });
+            }
+
+            window.WallpaperModule = { openWallpaperSelector: openWallpaperSelector };
+        })();
+
+        // ================================================================
+        //   ★ Apple Music 模块
+        // ================================================================
+        (function AppleMusic() {
+            var MUSIC_PLAYLIST = [
+                { title: '海哥的歌', artist: '未知', src: 'https://pan.vma.cc/pan/v/10b4ed58feaa7a3ed198b45f2ae53c54?ext=mp3', cover: '' },
+                { title: '龙我的歌', artist: '未知', src: 'https://pan.vma.cc/pan/v/8aab42de0f8eea67924b2b088a4c95d3?ext=mp3', cover: '' },
+                { title: '帝骑 said', artist: '未知', src: 'https://pan.vma.cc/pan/v/8f5b50223476f90f772085b0cfd2e558?ext=mp3', cover: '' }
+            ];
+
+            var globalAudio = document.getElementById('globalAudio');
+            var currentTrack = -1;
+            var isPlaying = false;
+
+            function fmt(t) {
+                if (!t || isNaN(t)) return '0:00';
+                var m = Math.floor(t / 60);
+                var s = Math.floor(t % 60);
+                return m + ':' + (s < 10 ? '0' : '') + s;
+            }
+
+            function loadAndPlay(idx) {
+                if (idx < 0 || idx >= MUSIC_PLAYLIST.length) return;
+                currentTrack = idx;
+                var track = MUSIC_PLAYLIST[idx];
+                globalAudio.src = track.src;
+                globalAudio.play().then(function() {
+                    isPlaying = true;
+                    syncUI();
+                }).catch(function() {
+                    // 自动播放被拦截
+                    isPlaying = false;
+                    syncUI();
+                });
+                syncUI();
+            }
+
+            function togglePlay() {
+                if (currentTrack < 0) { loadAndPlay(0); return; }
+                if (isPlaying) { globalAudio.pause(); isPlaying = false; }
+                else { globalAudio.play(); isPlaying = true; }
+                syncUI();
+            }
+
+            function syncUI() {
+                var win = document.getElementById('sm-win-music');
+                if (!win) return;
+                var titleEl = win.querySelector('.music-title');
+                var artistEl = win.querySelector('.music-artist');
+                var playBtn = win.querySelector('.mc-play');
+                var bar = win.querySelector('.music-progress .bar');
+                var cur = win.querySelector('.music-cur');
+                var dur = win.querySelector('.music-dur');
+                var seek = win.querySelector('.music-seek');
+
+                if (titleEl) titleEl.textContent = (currentTrack >= 0) ? MUSIC_PLAYLIST[currentTrack].title : 'Apple Music';
+                if (artistEl) artistEl.textContent = (currentTrack >= 0) ? MUSIC_PLAYLIST[currentTrack].artist : '点击播放';
+                if (playBtn) playBtn.innerHTML = isPlaying ? '⏸' : '▶';
+                if (bar) bar.style.width = (globalAudio.currentTime / (globalAudio.duration || 1) * 100) + '%';
+                if (cur) cur.textContent = fmt(globalAudio.currentTime);
+                if (dur) dur.textContent = fmt(globalAudio.duration);
+                if (seek) {
+                    seek.value = globalAudio.currentTime;
+                    seek.max = globalAudio.duration || 100;
+                }
+            }
+
+            globalAudio.addEventListener('timeupdate', function() {
+                var win = document.getElementById('sm-win-music');
+                if (!win) return;
+                var bar = win.querySelector('.music-progress .bar');
+                var cur = win.querySelector('.music-cur');
+                if (bar) bar.style.width = (globalAudio.currentTime / (globalAudio.duration || 1) * 100) + '%';
+                if (cur) cur.textContent = fmt(globalAudio.currentTime);
+                var seek = win.querySelector('.music-seek');
+                if (seek && document.activeElement !== seek) seek.value = globalAudio.currentTime;
+            });
+            globalAudio.addEventListener('loadedmetadata', syncUI);
+            globalAudio.addEventListener('ended', function() {
+                isPlaying = false;
+                syncUI();
+                // 下一首
+                if (currentTrack + 1 < MUSIC_PLAYLIST.length) loadAndPlay(currentTrack + 1);
+            });
+
+            function open() {
+                var plHtml = '';
+                MUSIC_PLAYLIST.forEach(function(m, i) {
+                    plHtml += '<div class="pl-item' + (i === currentTrack && isPlaying ? ' playing' : '') + '" data-i="' + i + '">' +
+                        '<div class="pl-cover">' + (m.cover ? '' : '🎵') + '</div>' +
+                        '<div class="pl-meta"><div class="pl-title">' + m.title + '</div>' +
+                        '<div class="pl-artist">' + m.artist + '</div></div>' +
+                        '<div class="pl-play-icon">' + (i === currentTrack ? (isPlaying ? '⏸' : '▶') : '▶') + '</div>' +
+                        '</div>';
+                });
+
+                var html = '<div class="music-player">' +
+                    '<div class="music-cover">🎵</div>' +
+                    '<div class="music-info"><div class="music-title">' + (currentTrack >= 0 ? MUSIC_PLAYLIST[currentTrack].title : 'Apple Music') + '</div>' +
+                    '<div class="music-artist">' + (currentTrack >= 0 ? MUSIC_PLAYLIST[currentTrack].artist : '点击播放') + '</div></div>' +
+                    '<div class="music-progress"><div class="bar"></div></div>' +
+                    '<div class="music-times"><span class="music-cur">0:00</span><span class="music-dur">0:00</span></div>' +
+                    '<input type="range" class="music-seek" min="0" max="100" value="0">' +
+                    '<div class="music-controls">' +
+                    '<div class="mc-btn" data-act="prev">⏮</div>' +
+                    '<div class="mc-btn mc-play" data-act="toggle">▶</div>' +
+                    '<div class="mc-btn" data-act="next">⏭</div>' +
+                    '</div>' +
+                    '<div class="music-playlist">' + plHtml + '</div>' +
+                    '<div class="music-hint">♪ 全局后台播放，关闭窗口/切到其他 App 继续响</div>' +
+                    '</div>';
+
+                StageManager.createWindow('music', 'Apple Music', '🎵', html, 380, 560);
+
+                var win = document.getElementById('sm-win-music');
+                if (!win) return;
+
+                win.querySelector('.mc-play').addEventListener('click', togglePlay);
+                win.querySelectorAll('.mc-btn[data-act="prev"]').forEach(function(b) {
+                    b.addEventListener('click', function() {
+                        var n = (currentTrack - 1 + MUSIC_PLAYLIST.length) % MUSIC_PLAYLIST.length;
+                        loadAndPlay(n);
+                    });
+                });
+                win.querySelectorAll('.mc-btn[data-act="next"]').forEach(function(b) {
+                    b.addEventListener('click', function() {
+                        var n = (currentTrack + 1) % MUSIC_PLAYLIST.length;
+                        loadAndPlay(n);
+                    });
+                });
+                var seek = win.querySelector('.music-seek');
+                if (seek) seek.addEventListener('input', function() {
+                    if (globalAudio.duration) globalAudio.currentTime = (seek.value / 100) * globalAudio.duration;
+                });
+                win.querySelectorAll('.pl-item').forEach(function(item) {
+                    item.addEventListener('click', function() {
+                        loadAndPlay(parseInt(this.dataset.i));
+                    });
+                });
+            }
+
+            window.AppleMusic = { open: open };
+        })();
+
+        // ================================================================
+        //   ★ 裂屏彩蛋 (Screen Crack)
+        // ================================================================
+        (function ScreenCrackEgg() {
+    var crackCanvas = document.getElementById('crackCanvas');
+    var ctx = crackCanvas.getContext('2d');
+    var shatterContainer = document.getElementById('shatterContainer');
+    var whiteFlash = document.getElementById('whiteFlash');
+    var crackHint = document.getElementById('crackHint');
+    var eggVideoContainer = document.getElementById('eggVideoContainer');
+    var eggVideo = document.getElementById('eggVideo');
+
+    var clickCount = 0;
+    var MAX_CLICKS = 5;          // ★ 点击档案图片 5 次直接触发
+    var eggPlayed = false;
+
+    function resizeCanvas() {
+        crackCanvas.width = window.innerWidth;
+        crackCanvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    function drawCrack(level) {
+        ctx.clearRect(0, 0, crackCanvas.width, crackCanvas.height);
+        var cx = crackCanvas.width / 2;
+        var cy = crackCanvas.height / 2;
+        var lines = level * 6;
+        for (var i = 0; i < lines; i++) {
+            var angle = (i / lines) * Math.PI * 2 + Math.random() * 0.3;
+            var len = (80 + Math.random() * 200) * (1 + level * 0.3);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            var x = cx, y = cy;
+            var segments = 4;
+            for (var j = 0; j < segments; j++) {
+                x += Math.cos(angle + (Math.random() - 0.5) * 0.5) * (len / segments);
+                y += Math.sin(angle + (Math.random() - 0.5) * 0.5) * (len / segments);
+                ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = 'rgba(255,255,255,' + (0.3 + level * 0.1) + ')';
+            ctx.lineWidth = 1 + level * 0.5;
+            ctx.stroke();
+        }
+    }
+
+    function createPieces() {
+        shatterContainer.innerHTML = '';
+        var cols = 12, rows = 20;
+        var cw = window.innerWidth / cols;
+        var ch = window.innerHeight / rows;
+        for (var r = 0; r < rows; r++) {
+            for (var c = 0; c < cols; c++) {
+                var piece = document.createElement('div');
+                piece.className = 'shatter-piece';
+                piece.style.left = (c * cw) + 'px';
+                piece.style.top = (r * ch) + 'px';
+                piece.style.width = cw + 'px';
+                piece.style.height = ch + 'px';
+                piece.style.background = 'linear-gradient(135deg, rgba(20,30,50,0.9), rgba(10,15,30,0.95))';
+                piece.style.border = '1px solid rgba(255,255,255,0.05)';
+                piece.style.transform = 'rotate(' + (Math.random() * 20 - 10) + 'deg)';
+                piece.style.transition = 'transform 1s ease-out, opacity 1s ease-out';
+                shatterContainer.appendChild(piece);
+            }
+        }
+    }
+
+    function trigger() {
+        if (eggPlayed) return;
+        eggPlayed = true;
+        createPieces();
+        whiteFlash.classList.add('flash');
+        setTimeout(function() {
+            eggVideoContainer.classList.add('show');
+            eggVideo.currentTime = 0;
+            var p = eggVideo.play();
+            if (p && p.then) {
+                p.catch(function() {
+                    eggVideo.muted = true;
+                    eggVideo.play();
+                });
+            }
+        }, 300);
+    }
+
+    function onPhotoClick(e) {
+        if (eggPlayed) return;
+        // 仅响应档案图片（.archive-photo），与时钟彩蛋（桌面空白处）完全隔离
+        var photo = e.target.closest && e.target.closest('.archive-photo');
+        if (!photo) return;
+        clickCount++;
+        crackHint.textContent = '再点 ' + (MAX_CLICKS - clickCount) + ' 次…';
+        crackHint.classList.add('show');
+        setTimeout(function() { crackHint.classList.remove('show'); }, 600);
+        document.body.classList.remove('shake-active');
+        void document.body.offsetWidth;
+        document.body.classList.add('shake-active');
+        drawCrack(clickCount);
+        if (clickCount >= MAX_CLICKS) trigger();
+    }
+
+    eggVideo.addEventListener('ended', function() {
+        eggVideoContainer.classList.remove('show');
+        crackCanvas.style.display = 'none';
+        shatterContainer.innerHTML = '';
+        clickCount = 0;
+        eggPlayed = false;
+        setTimeout(function() { crackCanvas.style.display = ''; }, 100);
+    });
+
+    // 事件委托：只在点击档案图片时触发，不占用桌面 click，彻底避免与时钟/高铁彩蛋冲突
+    document.getElementById('desktop').addEventListener('click', onPhotoClick);
+})();
+
+        // ================================================================
+        //   ★ DenLiner 高铁彩蛋 —— 最终修复版
+        //
+        //   问题修复：
+        //   ① 之前有两个独立的 <video> 元素，白屏后重新 play 第二个 → 看起来像"重新播放"
+        //   ② 现在【只有一个】<video id="den-video-element">，音频阶段画面隐藏(opacity:0)，
+        //      白屏后只切 opacity:0→1 露出同一段已加载好的视频，零重新加载、零 currentTime 重置
+        //
+        //   流程：滑动 Dock → 铁轨+高铁 → 点击高铁 → 旁白两句 → 白屏(0.3s) →
+        //        视频画面直接露出（同一段视频一直在播）→ ended 自动还原
+        //
+        // ================================================================
+        (function DenLinerDockEgg() {
+            // ★★★ 视频路径（改这一个 src 即可，音频和画面是同一个视频）★★★
+            var DEN_VIDEO_SRC = 'https://pan.vma.cc/pan/v/4eb1e6a232eecba2eecf20ebdb186f7b?ext=mp4';
+
+            // 时长压缩
+            var LINE_DURATION = 2200;   // 每句旁白 2.3 秒
+            var LINE_GAP = 100;         // 两句之间的间隔 0.1 秒
+            var WHITE_FLASH_MS = 100;   // 白屏 0.1 秒
+            var SLIDE_THRESHOLD = 40;    // 滑动阈值
+
+            var layer      = document.getElementById('denliner-layer');
+            var train      = layer ? layer.querySelector('.den-train') : null;
+            var line1El    = document.getElementById('denLine1');
+            var line2El    = document.getElementById('denLine2');
+            var narration  = document.getElementById('den-narration');
+            var flash      = document.getElementById('den-white-flash');
+            var videoEl    = document.getElementById('den-video-element');
+            var dock       = document.getElementById('dock');
+
+            // ★ 关键：video 的 src 只在初始化时设置一次，绝不重复设置
+            if (videoEl) {
+                var vSource = videoEl.querySelector('source');
+                if (vSource) vSource.src = DEN_VIDEO_SRC;
+                // 预加载
+                try { videoEl.load(); } catch(e) {}
+            }
+
+            var trainShown = false;
+            var triggered  = false;
+            var savedWallpaper = '';
+
+            // ---- Dock 滑动检测 ----
+            if (dock && layer) {
+                var startX = 0, startY = 0, sliding = false;
+
+                function onStart(e) {
+                    if (trainShown || triggered) return;
+                    var t = e.touches ? e.touches[0] : e;
+                    startX = t.clientX; startY = t.clientY; sliding = true;
+                    window.__slideMoved = 0; window.__isSliding = false;
+                }
+                function onMove(e) {
+                    if (!sliding) return;
+                    var t = e.touches ? e.touches[0] : e;
+                    var dx = Math.abs(t.clientX - startX);
+                    var dy = Math.abs(t.clientY - startY);
+                    window.__slideMoved = Math.max(window.__slideMoved || 0, dx, dy);
+                    if (window.__slideMoved >= SLIDE_THRESHOLD) window.__isSliding = true;
+                }
+                function onEnd() {
+                    if (!sliding) return;
+                    sliding = false;
+                    if ((window.__slideMoved >= SLIDE_THRESHOLD) && !trainShown) {
+                        trainShown = true;
+                        dock.style.opacity = '0';
+                        dock.style.pointerEvents = 'none';
+                        layer.classList.add('active');
+                        requestAnimationFrame(function() { layer.classList.add('show-train'); });
+                    }
+                    setTimeout(function() { window.__isSliding = false; }, 120);
+                }
+
+                dock.addEventListener('touchstart', onStart, { passive: true });
+                dock.addEventListener('touchmove', onMove, { passive: true });
+                dock.addEventListener('touchend', onEnd, { passive: true });
+                dock.addEventListener('mousedown', onStart);
+                dock.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onEnd);
+            }
+
+            // ---- 点击高铁 → 进入第二阶段 ----
+            if (train) {
+                train.addEventListener('click', function() {
+                    if (!trainShown || triggered) return;
+                    triggered = true;
+                    layer.classList.add('big-train');
+                    startEgg();
+                });
+            }
+
+            function startEgg() {
+                // ★ 每次进入都从头开始播（只在进入时重置一次）
+                if (videoEl) {
+                    try { videoEl.currentTime = 0; } catch(e) {}
+                    videoEl.load();
+                }
+
+                // 备份壁纸
+                try { savedWallpaper = localStorage.getItem('bio_wallpaper_url') || ''; } catch (e) {}
+
+                // 隐藏页面元素
+                document.body.classList.add('den-egg-active');
+
+                // 壁纸改默认
+                var wp = document.getElementById('wallpaperLayer');
+                if (wp) { wp.style.backgroundImage = 'none'; wp.classList.remove('show'); }
+
+                // === 核心：播放视频（只调用一次 play，src 之前只设过一次）===
+                // 视频一开始就在播（画面被 opacity:0 隐藏），所以音频阶段用户听得到声音
+                // 但画面不可见。白屏后只 show 画面，视频不重置、不重新加载。
+                var beginNarration = function() {
+                    showLine(line1El, NARRATION[0], function() {
+                        setTimeout(function() {
+                            showLine(line2El, NARRATION[1], function() {
+                                // === 白屏 → 露出同一段视频的画面（无缝衔接，不重新加载）===
+                                // 注意：video 一直在播，这里只是把画面从 opacity:0 切到 opacity:1
+                                // 不做 currentTime=0、不做 src 重写 → 不会"重新播放"
+                                flash.classList.add('flash');
+                                setTimeout(function() {
+                                    if (videoEl) {
+                                        videoEl.classList.add('show');   // 只是显示画面，视频不重置
+                                    }
+                                }, WHITE_FLASH_MS);
+                            });
+                        }, LINE_GAP);
+                    });
+                };
+
+                if (videoEl) {
+                    var p = videoEl.play();
+                    if (p && p.then) p.then(beginNarration).catch(beginNarration);
+                    else setTimeout(beginNarration, 200);
+                } else {
+                    setTimeout(beginNarration, 200);
+                }
+            }
+
+            var NARRATION = ['时空电车 Den-Liner，', '下一站，是过去，还是未来？'];
+
+            function showLine(el, text, done) {
+                if (!el) { setTimeout(done, LINE_DURATION); return; }
+                el.textContent = text;
+                narration.classList.add('show');
+                requestAnimationFrame(function() { el.classList.add('visible'); });
+                setTimeout(function() {
+                    el.classList.remove('visible');
+                    setTimeout(function() {
+                        narration.classList.remove('show');
+                        setTimeout(done, 300);
+                    }, 350);
+                }, LINE_DURATION);
+            }
+
+            // === 视频播完 → 全部还原 ===
+            if (videoEl) {
+                videoEl.addEventListener('ended', restoreAll);
+            }
+
+            function restoreAll() {
+                if (videoEl) {
+                    videoEl.pause();
+                    videoEl.classList.remove('show');
+                    // ★ 注意：这里【不】重置 currentTime
+                    // 重置会导致"重新播放"。我们直接暂停即可，
+                    // 下次再进彩蛋时 video.play() 会从当前位置继续。
+                    // 但如果想每次都从头开始，可以在 startEgg 里设 currentTime=0
+                    // 而不是在 restoreAll 里设。当前逻辑：恢复后停在结尾，下次从头播。
+                }
+                if (flash) flash.classList.remove('flash');
+                if (narration) narration.classList.remove('show');
+                if (line1El) line1El.classList.remove('visible');
+                if (line2El) line2El.classList.remove('visible');
+                if (layer) layer.classList.remove('active', 'show-train', 'big-train');
+                document.body.classList.remove('den-egg-active');
+
+                // 恢复壁纸
+                if (savedWallpaper) {
+                    var wp = document.getElementById('wallpaperLayer');
+                    if (wp) {
+                        wp.style.backgroundImage = 'url("' + savedWallpaper + '")';
+                        wp.classList.add('show');
+                    }
+                    try { localStorage.setItem('bio_wallpaper_url', savedWallpaper); } catch(e) {}
+                }
+
+                // 恢复 Dock
+                if (dock) { dock.style.opacity = ''; dock.style.pointerEvents = ''; }
+
+                trainShown = false;
+                triggered = false;
+            }
+
+            // 双击跳过
+            document.addEventListener('dblclick', function() {
+                if (triggered) restoreAll();
+            });
+
+            // 暴露给时间彩蛋
+            window.DenLiner = { isSliding: function() {
+                return !!(window.__isSliding || (window.__slideMoved >= SLIDE_THRESHOLD));
+            }, restore: restoreAll };
+        })();
+
+    </script>
+</body>
+</html>
