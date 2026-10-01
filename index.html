@@ -971,10 +971,7 @@
         }
 
         /* ============================================================
-           ★ DenLiner 高铁彩蛋 —— 完整修复版
-           核心修复：音频阶段和视频阶段用【同一个 video 元素】
-           音频时画面隐藏(opacity:0)，白屏后只露画面(opacity:1)
-           视频一直在播，零重新加载、零 currentTime 重置
+            DenLiner 高铁彩蛋
            ============================================================ */
         #denliner-layer {
             position: fixed;
@@ -1113,6 +1110,166 @@
             z-index: 99999; font-size: 10px; color: rgba(255,255,255,0.3);
             pointer-events: none; font-family: monospace;
         }
+
+        /* ============================================================
+                   猪先生专属故事
+                   ============================================================ */
+
+        /* 触发按钮 */
+        .pigX-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0 0;
+            padding: 10px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(120, 40, 60, 0.35);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.18s, box-shadow 0.18s;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pigX-btn:hover {
+            transform: scale(1.06);
+            background: rgba(160, 50, 80, 0.5);
+        }
+        .pigX-btn:active { transform: scale(0.94); }
+        .pigX-btn .pigX-btn-emo { font-size: 16px; line-height: 1; }
+
+        /* 对话框遮罩 */
+        .pigX-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 99990;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 0 0 6vh;
+            background: rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transition: opacity 0.22s ease;
+        }
+        .pigX-overlay.pigX-show { display: flex; opacity: 1; }
+
+        /* 底部半透明毛玻璃横条 */
+        .pigX-box {
+            position: relative;
+            width: min(820px, 92vw);
+            min-height: 132px;
+            padding: 16px 20px 16px 96px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(18, 22, 34, 0.52);
+            backdrop-filter: blur(18px) saturate(160%);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            box-shadow: 0 16px 50px rgba(0, 0, 0, 0.45),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        /* 左下菱形（clip-path 切角）头像框 */
+        .pigX-avatar {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%) rotate(45deg);
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            clip-path: polygon(14% 0, 86% 0, 100% 14%, 100% 86%, 86% 100%, 14% 100%, 0 86%, 0 14%);
+        }
+        .pigX-avatar .pigX-avatar-fallback {
+            transform: rotate(-45deg);
+            font-size: 30px;
+            line-height: 1;
+            user-select: none;
+        }
+        .pigX-avatar .pigX-avatar-img {
+            transform: rotate(-45deg);
+            width: 150%;
+            height: 150%;
+            object-fit: cover;
+            display: none;
+        }
+
+        /* 角色名 + 红色渐变短线 */
+        .pigX-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+        .pigX-name::after {
+            content: '';
+            width: 46px;
+            height: 3px;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #ff3b3b, #c90000);
+            box-shadow: 0 0 8px rgba(255, 60, 60, 0.45);
+        }
+
+        /* 台词正文（逐字打印） */
+        .pigX-text {
+            font-size: 16px;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.92);
+            min-height: 3.4em;
+            word-break: break-word;
+        }
+        .pigX-cursor {
+            display: inline-block;
+            width: 2px;
+            margin-left: 2px;
+            animation: pigXBlink 0.9s steps(1) infinite;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        @keyframes pigXBlink {
+            0%, 50%   { opacity: 1; }
+            50.01%, 100% { opacity: 0; }
+        }
+
+        /* 翻页提示 ▼ */
+        .pigX-next {
+            position: absolute;
+            right: 18px;
+            bottom: 14px;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.7);
+            animation: pigXBob 1s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes pigXBob {
+            0%, 100% { transform: translateY(0); opacity: 0.55; }
+            50%      { transform: translateY(4px); opacity: 1; }
+        }
+
+        /* 打字中/可翻页两种强度 */
+        .pigX-overlay[data-pigx-state="typing"] .pigX-next { opacity: 0.4; }
     </style>
 </head>
 <body>
@@ -1704,7 +1861,8 @@
             { icon: '📱', label: '乌冬瓜快手', url: 'https://v.kuaishou.com/JWQSzQca' },
             { icon: '📱', label: '自慰浩快手', url: 'https://v.kuaishou.com/K5WWSmm1' },
             { icon: '📱', label: '鸡爪哥快手', url: 'https://v.kuaishou.com/n5K3jsuX' },
-            { icon: '📱', label: '猪猪侠快手', url: 'https://v.kuaishou.com/KM3JIvAp' }
+            { icon: '📱', label: '猪猪侠快手', url: 'https://v.kuaishou.com/KM3JIvAp' },
+            { icon: '📱', label: '对不起快手', url: 'https://v.kuaishou.com/nZF1lZgH' }
         ];
 
         function buildMediaHTML(media) {
@@ -2170,19 +2328,9 @@
 })();
 
         // ================================================================
-        //   ★ DenLiner 高铁彩蛋 —— 最终修复版
-        //
-        //   问题修复：
-        //   ① 之前有两个独立的 <video> 元素，白屏后重新 play 第二个 → 看起来像"重新播放"
-        //   ② 现在【只有一个】<video id="den-video-element">，音频阶段画面隐藏(opacity:0)，
-        //      白屏后只切 opacity:0→1 露出同一段已加载好的视频，零重新加载、零 currentTime 重置
-        //
-        //   流程：滑动 Dock → 铁轨+高铁 → 点击高铁 → 旁白两句 → 白屏(0.3s) →
-        //        视频画面直接露出（同一段视频一直在播）→ ended 自动还原
-        //
+        //   ★ DenLiner 高铁彩蛋
         // ================================================================
         (function DenLinerDockEgg() {
-            // ★★★ 视频路径（改这一个 src 即可，音频和画面是同一个视频）★★★
             var DEN_VIDEO_SRC = 'https://1832663877.cdn.123clouddisk.com/1832663877/53623390#';
 
             // 时长压缩
@@ -2372,6 +2520,230 @@
             window.DenLiner = { isSliding: function() {
                 return !!(window.__isSliding || (window.__slideMoved >= SLIDE_THRESHOLD));
             }, restore: restoreAll };
+        })();
+
+        /* ============================================================
+           猪先生专属故事
+           ============================================================ */
+        (function () {
+            'use strict';
+
+            /* —— 故事添加处 ——
+               每个对象：name=角色名，text=台词，avatar=头像URL（留空则用 🐷 兜底 span）
+               填入 avatar 后自动切换到 <img>，不填则始终显示兜底 emoji */
+            var PIGX_LINES = [
+                { name: "猪先生的自述", text: "我叫尹来锋，2025 年 9 月 1 日从翠园小学转到鹏远学校初中部就读", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "我还记得，那时我的同桌是许家豪，后面是朱智博和赵小一", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "赵小一是我第一位认识的人，那时我找他要冰红茶，他很爽快地答应了", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "后面我们一直玩得特别好，他也是唯一一位在乎我的人", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "就这样，日子一天天过去…", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "直到有一天，中午的时候，他在后排打饭，我正经过他的位置走回去，排队的人却突然一个劲地挤，我手里端着的汤就这样洒在了他的书包，书包里面的书，全被打湿了", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "那是我们之间第一次发生冲突，之后我们暂时绝交了一段时间", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "过了两个月，在一次体育课上，我在一场友谊赛里消极比赛，直接让他所在的队伍躺赢，还让我所在的队伍被罚跑10圈", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "于是他们直呼：尹来锋神助攻！", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "而赵小一对我的态度直接 180 度大转变，与我和好了", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "之后就一直没什么大事", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "我曾跟他说过，在我快要毕业的时候，我将会为学校准备一点*小礼物*", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "将鞭炮里的火药和手机里的电池装到一个类似红牛的金属罐子，然后藏在教学楼的犄角旮旯里，然后趁值日老师不注意，掏出打火机点燃", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "在这之后，我会用我的拳头清除掉每一位侮辱他的人，除了许*馨", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "我喜欢她，她最大的一个特点就是疯", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "可惜，这份*礼物*，或许再也送不出去了", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "又是一天，又是在一节体育课，只不过这次，我们在练习少年拳", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "只是不知道为什么，我突然对后排的黄*婷大打出手，在办公室的班主任听到动静，立马赶了过来", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "我不服班主任的管理，于是对她大吼", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "但这又有什么用呢？结局自然是打包回家", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "这对我来说倒也不算啥，就是可惜了我在书包里的那包香辣蝉蛹了，那可是我攒了一周零花钱买的", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "第二天，理所当然的，教室里再也没了我的位置", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "可上天就好像还想要惩罚我一样，我又被班主任找上事了", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "在 2026 年 4 月份的时候，我潜入教师办公室，偷走了我眼中那个*区*的绿色条纹电风扇", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "可在我退学后的第二天，这件事突然被老师知道了", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "于是我的家长被请过来谈话，那件风扇也回到了我眼中那个*区*的手中，我的家长就在那里正式办理了退学手续", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "关于这件事，班级的同学众说纷纭，有的说是老师查违禁品发现的，也有的说是赵*一背刺的，不过这些，我早就不在意了", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "现在日子过的挺逍遥，一个月在文具店里打工，至少能赚 3000 块，平常就用一加 Ace 6T 开 165 Hz 玩三角洲，还能时不时奖励自己一顿烧烤", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+                { name: "猪先生的自述", text: "但我身上的污点，或许这辈子也洗不清了…", avatar: "https://1832663877.cdn.123clouddisk.com/1832663877/57449525#" },
+
+            ];
+
+            var TARGET_WIN_ID = 'sm-win-archive_8';   /* 猪先生的档案 窗口 */
+            var TYPE_INTERVAL = 100;                   /* 逐字间隔(ms) */
+
+            var overlay, box, avatarFb, avatarImg, nameEl, textEl, nextEl;
+            var idx = 0;
+            var charIdx = 0;
+            var typing = null;
+
+            function buildNodes() {
+                /* 触发按钮 */
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'pigX-btn';
+                btn.innerHTML = '<span class="pigX-btn-emo">📖</span>查看专属故事';
+
+                /* 对话框结构 */
+                overlay = document.createElement('div');
+                overlay.className = 'pigX-overlay';
+                overlay.setAttribute('data-pigx-state', 'idle');
+                overlay.innerHTML =
+                    '<div class="pigX-box" role="dialog" aria-modal="true">' +
+                        '<div class="pigX-avatar">' +
+                            '<span class="pigX-avatar-fallback">🐷</span>' +
+                            '<img class="pigX-avatar-img" alt="">' +
+                        '</div>' +
+                        '<div class="pigX-name"></div>' +
+                        '<div class="pigX-text"></div>' +
+                        '<div class="pigX-next">▼</div>' +
+                    '</div>';
+
+                return { btn: btn, overlay: overlay };
+            }
+
+            function ensureInjected(win) {
+                if (win.__pigXInjected) return win.__pigXNodes;
+                var nodes = buildNodes();
+                var content = win.querySelector('.sm-content');
+                if (!content) return null;
+
+                /* 按钮插到内容末尾 */
+                content.appendChild(nodes.btn);
+
+                /* 对话框挂到 body，避免被窗口 overflow 裁剪 */
+                document.body.appendChild(nodes.overlay);
+
+                avatarFb = nodes.overlay.querySelector('.pigX-avatar-fallback');
+                avatarImg = nodes.overlay.querySelector('.pigX-avatar-img');
+                nameEl    = nodes.overlay.querySelector('.pigX-name');
+                textEl    = nodes.overlay.querySelector('.pigX-text');
+                nextEl    = nodes.overlay.querySelector('.pigX-next');
+
+                bindEvents(win, nodes);
+                win.__pigXInjected = true;
+                win.__pigXNodes = nodes;
+                return nodes;
+            }
+
+            function bindEvents(win, nodes) {
+                nodes.btn.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    openDialog();
+                });
+
+                /* 点击对话框：翻页；若正在打字则本次点击仅立即播完当前句 */
+                nodes.overlay.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    if (typing) {
+                        finishCurrent();
+                    } else {
+                        next();
+                    }
+                });
+
+                /* 窗口关闭/最小化时若故事开着，则关闭并重置 */
+                var closeDot = win.querySelector('.sm-dot.close');
+                if (closeDot) {
+                    closeDot.addEventListener('click', function () { reset(); });
+                }
+            }
+
+            function renderLine() {
+                var line = PIGX_LINES[idx];
+                nameEl.textContent = line.name || '';
+
+                /* 头像双轨：有 avatar 走 <img>，否则 🐷 兜底 span */
+                if (line.avatar) {
+                    avatarImg.src = line.avatar;
+                    avatarImg.style.display = '';
+                    avatarFb.style.display = 'none';
+                } else {
+                    avatarImg.removeAttribute('src');
+                    avatarImg.style.display = 'none';
+                    avatarFb.style.display = '';
+                }
+            }
+
+            function printChar() {
+                charIdx++;
+                textEl.innerHTML = escapeHtml(PIGX_LINES[idx].text.slice(0, charIdx)) +
+                                   '<span class="pigX-cursor">▍</span>';
+                if (charIdx >= PIGX_LINES[idx].text.length) {
+                    typing = null;
+                    overlay.setAttribute('data-pigx-state', 'done');
+                }
+            }
+
+            function startTyping() {
+                renderLine();
+                charIdx = 0;
+                overlay.setAttribute('data-pigx-state', 'typing');
+                typing = setInterval(printChar, TYPE_INTERVAL);
+                printChar();
+            }
+
+            function finishCurrent() {
+                if (!typing) return;
+                clearInterval(typing);
+                typing = null;
+                charIdx = PIGX_LINES[idx].text.length;
+                textEl.innerHTML = escapeHtml(PIGX_LINES[idx].text) +
+                                   '<span class="pigX-cursor">▍</span>';
+                overlay.setAttribute('data-pigx-state', 'done');
+            }
+
+            function openDialog() {
+                if (!PIGX_LINES.length) return;
+                idx = 0;
+                overlay.classList.add('pigX-show');
+                startTyping();
+            }
+
+            function next() {
+                if (idx < PIGX_LINES.length - 1) {
+                    idx++;
+                    startTyping();
+                } else {
+                    /* 播完最后一条：自动关闭并重置索引 */
+                    reset();
+                }
+            }
+
+            function reset() {
+                if (typing) { clearInterval(typing); typing = null; }
+                idx = 0;
+                charIdx = 0;
+                overlay.classList.remove('pigX-show');
+                overlay.setAttribute('data-pigx-state', 'idle');
+                textEl.textContent = '';
+            }
+
+            function escapeHtml(s) {
+                return String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            /* 监听窗口创建：仅对猪先生的档案(id=archive_8)注入节点，其他档案不触碰 */
+            var desktop = document.getElementById('desktop') || document.body;
+            var observer = new MutationObserver(function (muts) {
+                muts.forEach(function (m) {
+                    m.addedNodes.forEach(function (node) {
+                        if (!node || node.nodeType !== 1) return;
+                        var el = (node.matches && node.matches('.sm-window')) ? node :
+                                 node.querySelector && node.querySelector('.sm-window');
+                        if (el && el.id === TARGET_WIN_ID) {
+                            ensureInjected(el);
+                        }
+                    });
+                });
+            });
+            observer.observe(desktop, { childList: true, subtree: true });
+
+            /* 兜底：若窗口已在监听前创建，轮询一次 */
+            setTimeout(function () {
+                var exist = document.getElementById(TARGET_WIN_ID);
+                if (exist) ensureInjected(exist);
+            }, 0);
         })();
 
     </script>
