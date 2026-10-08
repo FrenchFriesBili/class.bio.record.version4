@@ -1316,7 +1316,7 @@
         <div id="eggVideoContainer">
             <video id="eggVideo" playsinline>
                 <!-- ★★★ 在这里替换为你自己的视频文件 ★★★ -->
-                <source src="assets/video/video_260829_195208.mp4" type="video/mp4">
+                <source src="assets/video/Ryuki OP.mp4" type="video/mp4">
             </video>
         </div>
 
@@ -2745,6 +2745,103 @@
                 if (exist) ensureInjected(exist);
             }, 0);
         })();
+
+(function () {
+  'use strict';
+  var PIGX_LINES = [
+    { name: "鸡爪哥的自述", text: "我是全班颜值最高的人。", avatar: "" },
+    { name: "鸡爪哥的自述", text: "摇杆这东西，我闭眼都能摇出连招。", avatar: "" },
+    { name: "鸡爪哥的自述", text: "别问，问就是帅。", avatar: "" }
+ 
+  ];
+  var TARGET_WIN_ID = 'sm-win-archive_1';   // ★ 改这里，1=鸡爪哥
+  var TYPE_INTERVAL = 100;
+  var overlay, box, avatarFb, avatarImg, nameEl, textEl, nextEl;
+  var idx = 0, charIdx = 0, typing = null;
+  function buildNodes() {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pigX-btn';
+    btn.innerHTML = '<span class="pigX-btn-emo">📖</span>查看专属故事';
+    overlay = document.createElement('div');
+    overlay.className = 'pigX-overlay';
+    overlay.setAttribute('data-pigx-state', 'idle');
+    overlay.innerHTML =
+      '<div class="pigX-box" role="dialog" aria-modal="true">' +
+      '<div class="pigX-avatar"><span class="pigX-avatar-fallback">🐔</span><img class="pigX-avatar-img" alt=""></div>' +
+      '<div class="pigX-name"></div><div class="pigX-text"></div><div class="pigX-next">▼</div></div>';
+    return { btn: btn, overlay: overlay };
+  }
+  function ensureInjected(win) {
+    if (win.__pigXInjected) return win.__pigXNodes;
+    var nodes = buildNodes();
+    var content = win.querySelector('.sm-content');
+    if (!content) return null;
+    content.appendChild(nodes.btn);
+    document.body.appendChild(nodes.overlay);
+    avatarFb = nodes.overlay.querySelector('.pigX-avatar-fallback');
+    avatarImg = nodes.overlay.querySelector('.pigX-avatar-img');
+    nameEl = nodes.overlay.querySelector('.pigX-name');
+    textEl = nodes.overlay.querySelector('.pigX-text');
+    nextEl = nodes.overlay.querySelector('.pigX-next');
+    bindEvents(win, nodes);
+    win.__pigXInjected = true;
+    win.__pigXNodes = nodes;
+    return nodes;
+  }
+  function bindEvents(win, nodes) {
+    nodes.btn.addEventListener('click', function (ev) { ev.stopPropagation(); openDialog(); });
+    nodes.overlay.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      if (typing) finishCurrent(); else next();
+    });
+    var closeDot = win.querySelector('.sm-dot.close');
+    if (closeDot) closeDot.addEventListener('click', function () { reset(); });
+  }
+  function renderLine() {
+    var line = PIGX_LINES[idx];
+    nameEl.textContent = line.name || '';
+    if (line.avatar) {
+      avatarImg.src = line.avatar; avatarImg.style.display = ''; avatarFb.style.display = 'none';
+    } else {
+      avatarImg.removeAttribute('src'); avatarImg.style.display = 'none'; avatarFb.style.display = '';
+    }
+  }
+  function printChar() {
+    charIdx++;
+    textEl.innerHTML = escapeHtml(PIGX_LINES[idx].text.slice(0, charIdx)) + '<span class="pigX-cursor">▍</span>';
+    if (charIdx >= PIGX_LINES[idx].text.length) { typing = null; overlay.setAttribute('data-pigx-state', 'done'); }
+  }
+  function startTyping() { renderLine(); charIdx = 0; overlay.setAttribute('data-pigx-state', 'typing'); typing = setInterval(printChar, TYPE_INTERVAL); printChar(); }
+  function finishCurrent() {
+    if (!typing) return; clearInterval(typing); typing = null;
+    charIdx = PIGX_LINES[idx].text.length;
+    textEl.innerHTML = escapeHtml(PIGX_LINES[idx].text) + '<span class="pigX-cursor">▍</span>';
+    overlay.setAttribute('data-pigx-state', 'done');
+  }
+  function openDialog() { if (!PIGX_LINES.length) return; idx = 0; overlay.classList.add('pigX-show'); startTyping(); }
+  function next() { if (idx < PIGX_LINES.length - 1) { idx++; startTyping(); } else { reset(); } }
+  function reset() {
+    if (typing) { clearInterval(typing); typing = null; }
+    idx = 0; charIdx = 0; overlay.classList.remove('pigX-show');
+    overlay.setAttribute('data-pigx-state', 'idle'); textEl.textContent = '';
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  var desktop = document.getElementById('desktop') || document.body;
+  var observer = new MutationObserver(function (muts) {
+    muts.forEach(function (m) {
+      m.addedNodes.forEach(function (node) {
+        if (!node || node.nodeType !== 1) return;
+        var el = (node.matches && node.matches('.sm-window')) ? node : (node.querySelector && node.querySelector('.sm-window'));
+        if (el && el.id === TARGET_WIN_ID) ensureInjected(el);
+      });
+    });
+  });
+  observer.observe(desktop, { childList: true, subtree: true });
+  setTimeout(function () { var exist = document.getElementById(TARGET_WIN_ID); if (exist) ensureInjected(exist); }, 0);
+})();
 
     </script>
 </body>
