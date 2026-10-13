@@ -356,6 +356,90 @@
             border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
+        /* ===== 档案图片滑块（左右箭头切换）===== */
+        .photo-slider {
+            position: relative;
+            margin: 0 auto 16px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            touch-action: pan-y;
+        }
+        .photo-slider .slider-track {
+            display: flex;
+            width: 100%;
+            transition: transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+            will-change: transform;
+        }
+.slider-slide {
+  flex: 0 0 100%; 
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+}
+
+        .photo-slider .slider-track > .avatar {
+            flex: 0 0 100%;
+            width: 100%;
+            max-height: 260px;
+            object-fit: contain;
+            border-radius: 0;
+            margin: 0;
+            border: none;
+            background: transparent;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .slider-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(20, 30, 50, 0.55);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #fff;
+            font-size: 15px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 6;
+            transition: background 0.18s, transform 0.18s, opacity 0.18s;
+            opacity: 0.85;
+        }
+        .slider-arrow:hover { background: rgba(40, 60, 95, 0.85); transform: translateY(-50%) scale(1.08); opacity: 1; }
+        .slider-arrow:active { transform: translateY(-50%) scale(0.9); }
+        .slider-arrow.slider-prev { left: 8px; }
+        .slider-arrow.slider-next { right: 8px; }
+        .slider-dots {
+            position: absolute;
+            bottom: 8px;
+            left: 0; right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            z-index: 6;
+            pointer-events: none;
+        }
+        .slider-dots .slider-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            pointer-events: auto;
+            cursor: pointer;
+            transition: background 0.18s, transform 0.18s;
+        }
+        .slider-dots .slider-dot.active { background: #fff; transform: scale(1.3); }
+
         .sm-content video {
             width: 100%;
             border-radius: 12px;
@@ -1843,7 +1927,18 @@
                 media: { type: 'img', src: IMG + '20260627/d6I4/872X989/IMG_20260627_202835.JPG' },
                 desc: '？？', hobby: '？？' },
             13: { title: '自慰浩的档案', icon: '💇', name: '自慰浩',
-                media: { type: 'img', src: IMG + '20260627/WwAG/586X1042/IMG_20260627_204016.JPG' },
+                media: [
+                    { type: 'img', src:'assets/img/Chen Zihao.jpg' },
+                    { type: 'img', src:'assets/img/Screenshot_20261012_205936.jpg' },
+                    { type: 'img', src: 'assets/img/Screenshot_20261012_205942.jpg' },
+                    { type: 'img', src: 'assets/img/Screenshot_20261012_210017.jpg' },
+                    { type: 'img', src: 'assets/img/Screenshot_20261012_210020.jpg?' },
+                    { type: 'img', src: 'assets/img/Screenshot_20261012_210042.jpg' },
+                    { type: 'img', src: 'assets/img/Screenshot_20261012_210057.jpg' },
+                    { type: 'img', src: 'assets/img/Screenshot_20261012_210104.jpg' },
+                    { type: 'img', src: 'assets/img/Screenshot_20261012_210119.jpg' },
+                    { type: 'img', src: 'assets/img/Screenshot_20261012_210140.jpg' },
+                ],
                 desc: '陈学锦的儿子', hobby: '臭美' },
             14: { title: '水猴子的档案', icon: '🐒', name: '水猴子',
                 media: { type: 'img', src: IMG + '20260627/Spkz/756X1008/IMG_20260627_203922.JPG' },
@@ -1865,27 +1960,119 @@
             { icon: '📱', label: '对不起快手', url: 'https://v.kuaishou.com/nZF1lZgH' }
         ];
 
-        function buildMediaHTML(media) {
-            if (!media) return '';
-            if (media.type === 'video') {
-                if (media.src && media.src.indexOf('pan.vma.cc') !== -1) {
-                    return '<div style="text-align:center;padding:36px 12px;">' +
-                        '<p style="color:rgba(255,255,255,0.65);margin-bottom:18px;font-size:14px;">该视频需在新窗口播放</p>' +
-                        '<a href="' + media.src + '" target="_blank" rel="noopener noreferrer" ' +
-                        'style="display:inline-block;padding:13px 30px;background:rgba(0,122,255,0.75);' +
-                        'border-radius:13px;color:#fff;text-decoration:none;font-size:15px;font-weight:600;' +
-                        'border:1px solid rgba(255,255,255,0.25);box-shadow:0 6px 20px rgba(0,0,0,0.3);">' +
-                        '&#9654; 点击在新窗口播放视频 &#8599;</a></div>';
-                }
-                return '<video src="' + media.src + '" controls preload="metadata"></video>';
-            }
-            return '<img class="avatar archive-photo" src="' + media.src + '" alt=""' + ' data-archive-photo="1" onerror="this.style.display=\'none\'">';
-        }
+function buildMediaHTML(media) {
+if (!media) return '';
+
+// 多图数组：自慰浩专用
+if (Array.isArray(media) && media.length > 0 && media[0].type === 'img') {
+var total = media.length;
+var slides = '';
+var dots = '';
+for (var i = 0; i < total; i++) {
+slides += '<img src="' + media[i].src + '" class="slider-slide' + (i === 0 ? ' active' : '') + '">';
+dots += '<span class="slider-dot' + (i === 0 ? ' active' : '') + '"></span>';
+}
+return '<div class="photo-slider">' +
+(total > 1 ? '<button class="slider-arrow slider-prev">‹</button>' : '') +
+'<div class="slider-track">' + slides + '</div>' +
+(total > 1 ? '<button class="slider-arrow slider-next">›</button>' : '') +
+(total > 1 ? '<div class="slider-dots">' + dots + '</div>' : '') +
+'</div>';
+}
+
+if (media.type === 'video') {
+if (media.src && media.src.indexOf('pan.vma.cc') !== -1) {
+return '<div style="text-align:center;padding:36px 12px;">' +
+'<p style="color:rgba(255,255,255,0.65);margin-bottom:18px;font-size:14px;">该视频需在新窗口播放</p>' +
+'<a href="' + media.src + '" target="_blank" rel="noopener noreferrer" ' +
+'style="display:inline-block;padding:13px 30px;background:rgba(0,122,255,0.75);' +
+'border-radius:13px;color:#fff;text-decoration:none;font-size:15px;font-weight:600;' +
+'border:1px solid rgba(255,255,255,0.25);box-shadow:0 6px 20px rgba(0,0,0,0.3);">' +
+'&#9654; 点击在新窗口播放视频 &#8599;</a></div>';
+}
+return '<video src="' + media.src + '" controls preload="metadata"></video>';
+}
+return '<img class="avatar archive-photo" src="' + media.src + '" alt="" data-archive-photo="1" onerror="this.style.display=\'none\'">';
+}
 
         function buildArchiveHTML(data) {
             return buildMediaHTML(data.media) +
                 '<div class="desc"><span class="highlight">' + data.name + '</span> ' + data.desc + '<br>爱好：<span class="highlight">' +
                 data.hobby + '</span></div>';
+        }
+
+        // ===== 档案图片滑块（左右箭头切换）=====
+        function initPhotoSlider(winId) {
+            var win = document.getElementById('sm-win-' + winId);
+            if (!win) return;
+            var slider = win.querySelector('[data-slider]');
+            if (!slider) return;
+            var track = slider.querySelector('[data-slider-track]');
+            var slides = track ? track.children : [];
+            var dotsWrap = slider.querySelector('[data-slider-dots]');
+            var prevBtn = slider.querySelector('[data-slider-prev]');
+            var nextBtn = slider.querySelector('[data-slider-next]');
+            if (!track || slides.length === 0) return;
+
+            var idx = 0;
+            // 仅单张时不显示箭头和圆点
+            if (slides.length === 1) {
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
+                return;
+            }
+            // 生成圆点
+            for (var i = 0; i < slides.length; i++) {
+                (function(n) {
+                    var d = document.createElement('span');
+                    d.className = 'slider-dot' + (n === 0 ? ' active' : '');
+                    d.addEventListener('click', function() { go(n); });
+                    dotsWrap.appendChild(d);
+                })(i);
+            }
+            var dots = dotsWrap.children;
+
+            function go(n) {
+                idx = (n + slides.length) % slides.length;
+                track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+                for (var i = 0; i < dots.length; i++) {
+                    dots[i].classList.toggle('active', i === idx);
+                }
+            }
+            prevBtn.addEventListener('click', function(e) { e.stopPropagation(); go(idx - 1); });
+            nextBtn.addEventListener('click', function(e) { e.stopPropagation(); go(idx + 1); });
+            // 滑动手势
+            var startX = null, deltaX = 0, dragging = false;
+            track.addEventListener('pointerdown', function(e) {
+                if (slides.length <= 1) return;
+                dragging = true; startX = e.clientX; deltaX = 0;
+                track.style.transition = 'none';
+            });
+            track.addEventListener('pointermove', function(e) {
+                if (!dragging || startX === null) return;
+                deltaX = e.clientX - startX;
+                track.style.transform = 'translateX(calc(-' + (idx * 100) + '% + ' + deltaX + 'px))';
+            });
+            function endDrag() {
+                if (!dragging) return;
+                dragging = false;
+                track.style.transition = '';
+                var w = slider.clientWidth || 1;
+                if (deltaX < -w * 0.15) go(idx + 1);
+                else if (deltaX > w * 0.15) go(idx - 1);
+                else go(idx);
+                startX = null;
+            }
+            track.addEventListener('pointerup', endDrag);
+            track.addEventListener('pointercancel', endDrag);
+            track.addEventListener('pointerleave', endDrag);
+            // 键盘左右键
+            var tb = win.querySelector('.sm-titlebar');
+            win.tabIndex = 0;
+            win.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowLeft') go(idx - 1);
+                else if (e.key === 'ArrowRight') go(idx + 1);
+            });
         }
 
         // ===== 渲染桌面图标 =====
@@ -1903,6 +2090,7 @@
                 var winH = data.media ? 480 : 260;
                 setTimeout(function() {
                     StageManager.createWindow('archive_' + action, data.title, data.icon, html, winW, winH);
+                    initPhotoSlider('archive_' + action);
                 }, 250);
             });
             desktopIcons.appendChild(el);
@@ -2843,6 +3031,92 @@
   setTimeout(function () { var exist = document.getElementById(TARGET_WIN_ID); if (exist) ensureInjected(exist); }, 0);
 })();
 
+        // ===== 自慰浩轮播交互（事件委托，仅管 .photo-slider）=====
+        document.addEventListener('click', function(e) {
+            var prev = e.target.closest('.slider-prev');
+            var next = e.target.closest('.slider-next');
+            var dot = e.target.closest('.slider-dot');
+            if (!prev && !next && !dot) return;
+
+            var slider = (prev || next || dot).closest('.photo-slider');
+            if (!slider) return;
+
+            var track = slider.querySelector('.slider-track');
+            var slides = slider.querySelectorAll('.slider-slide');
+            var dots = slider.querySelectorAll('.slider-dot');
+            var idx = parseInt(slider.getAttribute('data-index') || '0', 10);
+
+            if (prev) idx = (idx - 1 + slides.length) % slides.length;
+            if (next) idx = (idx + 1) % slides.length;
+            if (dot) idx = Array.prototype.indexOf.call(dots, dot);
+
+            slider.setAttribute('data-index', idx);
+            track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+            for (var i = 0; i < slides.length; i++) {
+                slides[i].classList.toggle('active', i === idx);
+            }
+            for (var j = 0; j < dots.length; j++) {
+                dots[j].classList.toggle('active', j === idx);
+            }
+        });
+
+        // 触摸滑动
+        var swipeStartX = null;
+        document.addEventListener('touchstart', function(e) {
+            var slider = e.target.closest('.photo-slider');
+            if (slider) swipeStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        document.addEventListener('touchend', function(e) {
+            if (swipeStartX === null) return;
+            var slider = e.target.closest('.photo-slider');
+            if (!slider) { swipeStartX = null; return; }
+            var diff = e.changedTouches[0].clientX - swipeStartX;
+            if (Math.abs(diff) > 50) {
+                var btn = diff > 0
+                    ? slider.querySelector('.slider-prev')
+                    : slider.querySelector('.slider-next');
+                if (btn) btn.click();
+            }
+            swipeStartX = null;
+        }, { passive: true });
+// ===== 自慰浩轮播交互 =====
+document.addEventListener('click', function(e) {
+var prev = e.target.closest('.slider-prev');
+var next = e.target.closest('.slider-next');
+var dot = e.target.closest('.slider-dot');
+if (!prev && !next && !dot) return;
+var slider = (prev || next || dot).closest('.photo-slider');
+if (!slider) return;
+var slides = slider.querySelectorAll('.slider-slide');
+var dots = slider.querySelectorAll('.slider-dot');
+var track = slider.querySelector('.slider-track');
+var index = 0;
+slides.forEach(function(s, i) { if (s.classList.contains('active')) index = i; });
+if (prev) index = (index - 1 + slides.length) % slides.length;
+if (next) index = (index + 1) % slides.length;
+if (dot) { dots.forEach(function(d, i) { if (d === dot) index = i; }); }
+track.style.transform = 'translateX(-' + index * 100 + '%)';
+slides.forEach(function(s, i) { s.classList.toggle('active', i === index); });
+dots.forEach(function(d, i) { d.classList.toggle('active', i === index); });
+});
+var touchStartX = null;
+document.addEventListener('touchstart', function(e) {
+var slider = e.target.closest('.photo-slider');
+if (slider) touchStartX = e.touches[0].clientX;
+});
+document.addEventListener('touchend', function(e) {
+if (touchStartX == null) return;
+var diff = e.changedTouches[0].clientX - touchStartX;
+if (Math.abs(diff) > 50) {
+var slider = e.target.closest('.photo-slider');
+if (slider) {
+var btn = diff > 0 ? slider.querySelector('.slider-prev') : slider.querySelector('.slider-next');
+if (btn) btn.click();
+}
+}
+touchStartX = null;
+});
     </script>
 </body>
 </html>
